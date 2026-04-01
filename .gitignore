@@ -1,0 +1,9 @@
+.venv/
+__pycache__/
+*.pyc
+.idea/
+archive/
+data_files/
+prompt/
+*.csv
+*.xlsx

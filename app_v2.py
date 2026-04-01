@@ -18,6 +18,10 @@ if 'query' not in st.session_state:
     st.session_state.query = ''
 if 'agent_text' not in st.session_state:
     st.session_state.agent_text = ''
+if 'custom_components' not in st.session_state:
+    st.session_state.custom_components = []
+if 'edited_examples' not in st.session_state:
+    st.session_state.edited_examples = {}
 
 try:
     API_KEY = st.secrets["QWEN_API_KEY"]
@@ -278,16 +282,154 @@ with tab_chat:
 # ══════════════════════════════════════════════════════════
 # Tab 2: 组件库
 # ══════════════════════════════════════════════════════════
+
+# LLM prompts for component editing/creation
+EDIT_PROMPT = """你是 A2UI 组件调试助手。用户要修改一个组件的参数。
+
+当前组件类型: {comp_type}
+可用属性: {props}
+当前 JSON: {current_json}
+
+用户要求: {user_input}
+
+请输出修改后的完整组件 JSON 对象，只输出 JSON 不要其他内容。"""
+
+ADD_PROMPT = """你是 A2UI 组件调试助手。根据用户描述生成一个组件。
+
+可用组件类型及属性:
+{all_components}
+
+用户描述: {user_input}
+
+请输出完整的组件 JSON 对象（必须包含 type 字段），只输出 JSON 不要其他内容。"""
+
+def _parse_json(raw):
+    """从 LLM 输出中提取 JSON"""
+    s = raw.strip()
+    if s.startswith("```"):
+        s = s.split("```")[1]
+        if s.startswith("json"):
+            s = s[4:]
+    return json.loads(s.strip())
+
+def _preview_html(comp_json):
+    """渲染单个组件的预览 HTML"""
+    html = comp_lib.render_component(comp_json)
+    return f'''<!DOCTYPE html><html><head>
+        <meta charset="UTF-8">
+        <script src="https://cdn.tailwindcss.com"></script>
+        <style>* {{ margin:0;padding:0;box-sizing:border-box; }} body {{ font-family:-apple-system,sans-serif;background:#F8FAFC;padding:10px; }} ::-webkit-scrollbar {{ display:none; }}</style>
+    </head><body>{html}</body></html>'''
+
+def _all_components_desc():
+    """生成所有组件类型的简要描述（给 LLM 用）"""
+    lines = []
+    for name, info in comp_lib.COMPONENT_CATALOG.items():
+        props = ", ".join(f"{k}: {v}" for k, v in info["props"].items())
+        lines.append(f"{name} - {props}")
+    return "\n".join(lines)
+
 with tab_lib:
     catalog = comp_lib.COMPONENT_CATALOG
     cat_icons = {"展示类": "📋", "输入选择类": "✏️", "按钮类": "🔘", "特殊组件": "⚙️"}
 
-    # 统计
-    n_general = sum(1 for v in catalog.values() if v["scope"] == "通用")
-    n_industry = sum(1 for v in catalog.values() if v["scope"] == "行业特定")
+    # ── 新增组件区 ──
+    st.markdown('''
+    <div style="padding:12px 16px;background:#F0FDF4;border:1px solid #BBF7D0;border-radius:8px;margin-bottom:8px;">
+        <span style="font-size:14px;font-weight:700;color:#166534;">+ 新增组件</span>
+        <span style="font-size:12px;color:#4ADE80;margin-left:8px;">用自然语言描述你想要的组件</span>
+    </div>
+    ''', unsafe_allow_html=True)
 
+    add_col1, add_col2 = st.columns([5, 1])
+    with add_col1:
+        add_desc = st.text_input("描述组件", placeholder="例如：一个显示会员到期提醒的警告通知", label_visibility="collapsed", key="add_comp_input")
+    with add_col2:
+        add_btn = st.button("生成", use_container_width=True, type="primary", key="add_comp_btn")
+
+    if add_btn and add_desc:
+        with st.spinner("生成中..."):
+            prompt = ADD_PROMPT.format(all_components=_all_components_desc(), user_input=add_desc)
+            raw = model.generate_with_qwen(add_desc, prompt, API_KEY)
+            if raw:
+                try:
+                    comp_json = _parse_json(raw)
+                    st.session_state.custom_components.append({
+                        "name": comp_json.get("type", "Custom") + f"_{len(st.session_state.custom_components)+1}",
+                        "json": comp_json,
+                        "desc": add_desc,
+                    })
+                    st.rerun()
+                except:
+                    st.error("生成失败，请重试")
+
+    # ── 自定义组件列表 ──
+    if st.session_state.custom_components:
+        st.markdown('''
+        <div style="margin:12px 0 4px 0;padding:16px 20px;background:#F0FDF4;border-left:3px solid #22C55E;border-radius:0 8px 8px 0;">
+            <span style="font-size:16px;font-weight:700;color:#0F172A;">自定义组件</span>
+            <span style="font-size:12px;color:#64748B;margin-left:8px;">通过自然语言生成的组件</span>
+        </div>
+        ''', unsafe_allow_html=True)
+
+        to_delete = None
+        for i, item in enumerate(st.session_state.custom_components):
+            col_info, col_preview, col_del = st.columns([3, 2, 0.3], gap="medium")
+            comp_json = item["json"]
+            comp_type = comp_json.get("type", "Unknown")
+
+            with col_info:
+                st.markdown(f'''
+                <div style="padding:12px 0;">
+                    <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                        <span style="font-size:14px;font-weight:700;color:#0F172A;font-family:monospace;">{comp_type}</span>
+                        <span style="font-size:10px;background:#DCFCE7;color:#166534;padding:2px 8px;border-radius:10px;">自定义</span>
+                    </div>
+                    <div style="font-size:12px;color:#64748B;line-height:1.6;margin-bottom:6px;">{item["desc"]}</div>
+                    <code style="font-size:10px;color:#94A3B8;">{json.dumps(comp_json, ensure_ascii=False)}</code>
+                </div>
+                ''', unsafe_allow_html=True)
+
+            with col_preview:
+                stc.html(_preview_html(comp_json), height=90)
+
+            with col_del:
+                if st.button("✕", key=f"del_custom_{i}"):
+                    to_delete = i
+
+            # 自定义组件的编辑区
+            with st.expander(f"调试 {comp_type}", expanded=False):
+                ec1, ec2 = st.columns([3, 2], gap="medium")
+                with ec1:
+                    edit_input = st.text_input("描述修改", placeholder="例如：把内容改成双十一活动", key=f"edit_custom_{i}", label_visibility="collapsed")
+                    eb1, eb2 = st.columns(2)
+                    with eb1:
+                        if st.button("应用修改", key=f"apply_custom_{i}", use_container_width=True, type="primary") and edit_input:
+                            props_desc = ""
+                            if comp_type in catalog:
+                                props_desc = ", ".join(f"{k}: {v}" for k, v in catalog[comp_type]["props"].items())
+                            prompt = EDIT_PROMPT.format(comp_type=comp_type, props=props_desc or "自定义", current_json=json.dumps(comp_json, ensure_ascii=False), user_input=edit_input)
+                            with st.spinner("修改中..."):
+                                raw = model.generate_with_qwen(edit_input, prompt, API_KEY)
+                                if raw:
+                                    try:
+                                        st.session_state.custom_components[i]["json"] = _parse_json(raw)
+                                        st.rerun()
+                                    except:
+                                        st.error("修改失败")
+                    st.code(json.dumps(comp_json, ensure_ascii=False, indent=2), language="json")
+                with ec2:
+                    stc.html(_preview_html(comp_json), height=150)
+
+            st.markdown('<hr style="margin:0;border:none;border-top:1px solid #F1F5F9;">', unsafe_allow_html=True)
+
+        if to_delete is not None:
+            st.session_state.custom_components.pop(to_delete)
+            st.rerun()
+
+    # ── 分 scope 展示现有组件 ──
     def render_scope_section(scope_name, scope_desc, scope_color, scope_bg):
-        """渲染一个 scope 分区下的所有组件（列表式）"""
+        """渲染一个 scope 分区下的所有组件（列表式 + 调试功能）"""
         scoped = {k: v for k, v in catalog.items() if v["scope"] == scope_name}
         if not scoped:
             return
@@ -316,20 +458,26 @@ with tab_lib:
             st.markdown(f'<div style="font-size:13px;font-weight:600;color:#475569;margin:16px 0 8px 4px;">{cat_icons.get(cat, "")} {cat}</div>', unsafe_allow_html=True)
 
             for comp_name, info in cat_items.items():
+                # 如果用户编辑过，用编辑后的 JSON；否则用默认示例
+                current_example = st.session_state.edited_examples.get(comp_name, info["example"])
+
                 props_tags = " ".join(
                     f'<span style="display:inline-block;background:#F1F5F9;color:#475569;padding:1px 6px;border-radius:3px;font-size:10px;font-family:monospace;">{k}</span>'
                     for k in info["props"].keys()
                 )
 
-                # 左：描述信息  右：实时预览
+                is_edited = comp_name in st.session_state.edited_examples
+
                 col_info, col_preview = st.columns([3, 2], gap="medium")
 
                 with col_info:
+                    edited_badge = '<span style="font-size:10px;background:#FEF3C7;color:#D97706;padding:2px 8px;border-radius:10px;margin-left:4px;">已修改</span>' if is_edited else ''
                     st.markdown(f'''
                     <div style="padding:12px 0;">
                         <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
                             <span style="font-size:14px;font-weight:700;color:#0F172A;font-family:monospace;">{comp_name}</span>
                             <span style="font-size:10px;background:#EEF2FF;color:#4F46E5;padding:2px 8px;border-radius:10px;">{info["category"]}</span>
+                            {edited_badge}
                         </div>
                         <div style="font-size:12px;color:#64748B;line-height:1.6;margin-bottom:8px;">{info["description"]}</div>
                         <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;">
@@ -339,23 +487,42 @@ with tab_lib:
                     ''', unsafe_allow_html=True)
 
                 with col_preview:
-                    preview_html = comp_lib.render_component(info["example"])
-                    wrapped = f'''<!DOCTYPE html><html><head>
-                        <meta charset="UTF-8">
-                        <script src="https://cdn.tailwindcss.com"></script>
-                        <style>* {{ margin:0;padding:0;box-sizing:border-box; }} body {{ font-family:-apple-system,sans-serif;background:#F8FAFC;padding:10px; }} ::-webkit-scrollbar {{ display:none; }}</style>
-                    </head><body>{preview_html}</body></html>'''
-                    stc.html(wrapped, height=90)
+                    stc.html(_preview_html(current_example), height=90)
+
+                # 调试面板
+                with st.expander(f"调试 {comp_name}", expanded=False):
+                    dc1, dc2 = st.columns([3, 2], gap="medium")
+                    with dc1:
+                        edit_val = st.text_input("描述修改", placeholder=f"例如：把标题改成春节活动", key=f"edit_{comp_name}", label_visibility="collapsed")
+                        btn_cols = st.columns([1, 1] if is_edited else [1])
+                        with btn_cols[0]:
+                            if st.button("应用修改", key=f"apply_{comp_name}", use_container_width=True, type="primary") and edit_val:
+                                props_desc = ", ".join(f"{k}: {v}" for k, v in info["props"].items())
+                                prompt = EDIT_PROMPT.format(comp_type=comp_name, props=props_desc, current_json=json.dumps(current_example, ensure_ascii=False), user_input=edit_val)
+                                with st.spinner("修改中..."):
+                                    raw = model.generate_with_qwen(edit_val, prompt, API_KEY)
+                                    if raw:
+                                        try:
+                                            st.session_state.edited_examples[comp_name] = _parse_json(raw)
+                                            st.rerun()
+                                        except:
+                                            st.error("修改失败")
+                        if is_edited:
+                            with btn_cols[1]:
+                                if st.button("还原默认", key=f"reset_{comp_name}", use_container_width=True):
+                                    del st.session_state.edited_examples[comp_name]
+                                    st.rerun()
+                        st.code(json.dumps(current_example, ensure_ascii=False, indent=2), language="json")
+                    with dc2:
+                        stc.html(_preview_html(current_example), height=150)
 
                 st.markdown('<hr style="margin:0;border:none;border-top:1px solid #F1F5F9;">', unsafe_allow_html=True)
 
-    # ── 通用组件 ──
     render_scope_section(
         "通用", "可在任何业务场景复用的基础组件，如文本展示、选项选择、按钮操作等",
         "#4F46E5", "#F5F3FF"
     )
 
-    # ── 行业特定组件 ──
     render_scope_section(
         "行业特定", "针对快递物流等垂直场景设计的专用组件，包含地址收集、包裹信息等",
         "#D97706", "#FFFBEB"

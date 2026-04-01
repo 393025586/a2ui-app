@@ -19,7 +19,10 @@ if 'query' not in st.session_state:
 if 'agent_text' not in st.session_state:
     st.session_state.agent_text = ''
 
-API_KEY = st.secrets.get("QWEN_API_KEY", "Zq2YTTh5DFGtdLpETX1zJ6J8cauCH8Cn")
+try:
+    API_KEY = st.secrets["QWEN_API_KEY"]
+except Exception:
+    API_KEY = "Zq2YTTh5DFGtdLpETX1zJ6J8cauCH8Cn"
 PROMPT = """你是智能生活助手，能够用自然语言和 UI 组件帮助用户解决问题。
 
 根据用户的问题，输出一个 JSON 对象，包含两个字段：

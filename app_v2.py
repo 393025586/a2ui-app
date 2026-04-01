@@ -429,24 +429,27 @@ with tab_lib:
             with e1:
                 edit_input = st.text_input("edit", placeholder="描述修改...", key=f"ec_{i}", label_visibility="collapsed")
             with e2:
-                if st.button("修改", key=f"ea_{i}", use_container_width=True) and edit_input:
-                    props_desc = ", ".join(f"{k}: {v}" for k, v in catalog[comp_type]["props"].items()) if comp_type in catalog else "自定义"
-                    prompt = EDIT_PROMPT.format(comp_type=comp_type, props=props_desc, current_json=json.dumps(comp_json, ensure_ascii=False), user_input=edit_input)
-                    with st.spinner("..."):
-                        raw = model.generate_with_qwen(edit_input, prompt, API_KEY)
-                        if raw:
-                            try:
-                                st.session_state.custom_components[i]["json"] = _parse_json(raw)
-                                st.rerun()
-                            except Exception as ex:
-                                st.error(f"解析失败：{ex}")
-                                with st.expander("原始输出"):
-                                    st.code(raw[:1000], language="text")
-                        else:
-                            st.error("模型调用失败")
+                do_custom_edit = st.button("修改", key=f"ea_{i}", use_container_width=True)
             with e3:
                 if st.button("✕", key=f"ed_{i}"):
                     to_delete = i
+
+            # 处理编辑（在列外执行）
+            if do_custom_edit and edit_input:
+                props_desc = ", ".join(f"{k}: {v}" for k, v in catalog[comp_type]["props"].items()) if comp_type in catalog else "自定义"
+                edit_prompt = EDIT_PROMPT.format(comp_type=comp_type, props=props_desc, current_json=json.dumps(comp_json, ensure_ascii=False), user_input=edit_input)
+                with st.spinner(f"正在修改..."):
+                    raw = model.generate_with_qwen(edit_input, edit_prompt, API_KEY)
+                if raw:
+                    try:
+                        st.session_state.custom_components[i]["json"] = _parse_json(raw)
+                        st.rerun()
+                    except Exception as ex:
+                        st.error(f"解析失败：{ex}")
+                        with st.expander("原始输出"):
+                            st.code(raw[:1000], language="text")
+                else:
+                    st.error("模型调用失败")
 
             st.markdown('<hr style="margin:0;border:none;border-top:1px solid #F1F5F9;">', unsafe_allow_html=True)
 
@@ -522,26 +525,29 @@ with tab_lib:
                 with e1:
                     edit_val = st.text_input("edit", placeholder="用自然语言描述修改...", key=f"e_{comp_name}", label_visibility="collapsed")
                 with e2:
-                    if st.button("修改", key=f"a_{comp_name}", use_container_width=True) and edit_val:
-                        props_desc = ", ".join(f"{k}: {v}" for k, v in info["props"].items())
-                        prompt = EDIT_PROMPT.format(comp_type=comp_name, props=props_desc, current_json=json.dumps(current_example, ensure_ascii=False), user_input=edit_val)
-                        with st.spinner("..."):
-                            raw = model.generate_with_qwen(edit_val, prompt, API_KEY)
-                            if raw:
-                                try:
-                                    st.session_state.edited_examples[comp_name] = _parse_json(raw)
-                                    st.rerun()
-                                except Exception as ex:
-                                    st.error(f"解析失败：{ex}")
-                                    with st.expander("原始输出"):
-                                        st.code(raw[:1000], language="text")
-                            else:
-                                st.error("模型调用失败")
+                    do_edit = st.button("修改", key=f"a_{comp_name}", use_container_width=True)
                 if is_edited:
                     with e3:
                         if st.button("↺", key=f"r_{comp_name}", help="还原默认"):
                             del st.session_state.edited_examples[comp_name]
                             st.rerun()
+
+                # 处理编辑（在列外执行，避免嵌套问题）
+                if do_edit and edit_val:
+                    props_desc = ", ".join(f"{k}: {v}" for k, v in info["props"].items())
+                    edit_prompt = EDIT_PROMPT.format(comp_type=comp_name, props=props_desc, current_json=json.dumps(current_example, ensure_ascii=False), user_input=edit_val)
+                    with st.spinner(f"正在修改 {comp_name}..."):
+                        raw = model.generate_with_qwen(edit_val, edit_prompt, API_KEY)
+                    if raw:
+                        try:
+                            st.session_state.edited_examples[comp_name] = _parse_json(raw)
+                            st.rerun()
+                        except Exception as ex:
+                            st.error(f"解析失败：{ex}")
+                            with st.expander("原始输出"):
+                                st.code(raw[:1000], language="text")
+                    else:
+                        st.error("模型调用失败")
 
                 st.markdown('<hr style="margin:0;border:none;border-top:1px solid #F1F5F9;">', unsafe_allow_html=True)
 

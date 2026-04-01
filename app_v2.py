@@ -5,13 +5,14 @@ A2UI - 极简界面，高保真预览
 import streamlit as st
 import streamlit.components.v1 as stc
 import json
+import re
 import model
 import components as comp_lib
 
 st.set_page_config(page_title="A2UI Playground", layout="wide", initial_sidebar_state="collapsed")
 
-if 'preview' not in st.session_state:
-    st.session_state.preview = ''
+if 'chat_components' not in st.session_state:
+    st.session_state.chat_components = []
 if 'json_out' not in st.session_state:
     st.session_state.json_out = ''
 if 'query' not in st.session_state:
@@ -161,7 +162,7 @@ with tab_chat:
             clr = st.button("✕", use_container_width=True)
 
         if clr:
-            st.session_state.preview = ''
+            st.session_state.chat_components = []
             st.session_state.json_out = ''
             st.session_state.agent_text = ''
             st.session_state.query = ''
@@ -173,6 +174,7 @@ with tab_chat:
                 raw = model.generate_with_qwen(user_query, PROMPT, API_KEY)
                 if raw:
                     json_str = raw.strip()
+                    json_str = re.sub(r'<think>[\s\S]*?</think>', '', json_str).strip()
                     if json_str.startswith("```"):
                         json_str = json_str.split("```")[1]
                         if json_str.startswith("json"):
@@ -181,24 +183,19 @@ with tab_chat:
                     try:
                         parsed = json.loads(json_str)
                         if isinstance(parsed, dict) and "components" in parsed:
-                            agent_text = parsed.get("text", "")
-                            components = parsed.get("components", [])
+                            st.session_state.agent_text = parsed.get("text", "")
+                            st.session_state.chat_components = parsed.get("components", [])
                         elif isinstance(parsed, list):
-                            agent_text = ""
-                            components = parsed
+                            st.session_state.agent_text = ""
+                            st.session_state.chat_components = parsed
                         else:
-                            agent_text = ""
-                            components = [parsed] if isinstance(parsed, dict) else []
-                        st.session_state.agent_text = agent_text
-                        st.session_state.json_out = json.dumps(components, ensure_ascii=False, indent=2)
-                        component_html = comp_lib.render_components(components)
-                        st.session_state.preview = comp_lib.render_chat_html(
-                            user_query, agent_text, component_html
-                        )
+                            st.session_state.agent_text = ""
+                            st.session_state.chat_components = [parsed] if isinstance(parsed, dict) else []
+                        st.session_state.json_out = json.dumps(st.session_state.chat_components, ensure_ascii=False, indent=2)
                     except:
                         st.session_state.agent_text = ''
+                        st.session_state.chat_components = []
                         st.session_state.json_out = json_str
-                        st.session_state.preview = '<div>JSON 解析错误</div>'
             st.rerun()
 
         if st.session_state.json_out:
@@ -208,7 +205,20 @@ with tab_chat:
     with right:
         st.markdown('<div class="section-label">预览</div>', unsafe_allow_html=True)
 
-        if st.session_state.preview:
+        if st.session_state.chat_components or st.session_state.agent_text:
+            # Dynamically render: apply library edits to chat components
+            display_comps = []
+            for comp in st.session_state.chat_components:
+                ctype = comp.get("type", "")
+                if ctype in st.session_state.edited_examples:
+                    display_comps.append(st.session_state.edited_examples[ctype])
+                else:
+                    display_comps.append(comp)
+            component_html = comp_lib.render_components(display_comps)
+            chat_content = comp_lib.render_chat_html(
+                st.session_state.query, st.session_state.agent_text, component_html
+            )
+
             phone = f'''<!DOCTYPE html>
 <html>
 <head>
@@ -249,7 +259,7 @@ with tab_chat:
             <div style="padding: 52px 0 8px 0; text-align: center; font-size: 14px; font-weight: 600; color: #1f2937; border-bottom: 0.5px solid #e5e7eb; background: #f7f7f7; flex-shrink: 0;">智能助手</div>
             <!-- 聊天内容 -->
             <div style="flex: 1; overflow-y: auto; background: #EDEDED;">
-                {st.session_state.preview}
+                {chat_content}
             </div>
             <!-- 底部输入栏 -->
             <div style="padding: 8px 10px; background: #f7f7f7; border-top: 0.5px solid #e5e7eb; display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
@@ -306,6 +316,7 @@ ADD_PROMPT = """你是 A2UI 组件调试助手。根据用户描述生成一个�
 def _parse_json(raw):
     """从 LLM 输出中提取 JSON"""
     s = raw.strip()
+    s = re.sub(r'<think>[\s\S]*?</think>', '', s).strip()
     if s.startswith("```"):
         s = s.split("```")[1]
         if s.startswith("json"):

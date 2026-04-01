@@ -7,3 +7,5 @@ data_files/
 prompt/
 *.csv
 *.xlsx
+.DS_Store
+backup_*/

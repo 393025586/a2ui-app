@@ -1,0 +1,21 @@
+[server]
+port = 8501
+headless = true
+
+[browser]
+serverAddress = ""
+gatherUsageStats = false
+
+[theme]
+primaryColor = "#007AFF"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#F0F2F6"
+textColor = "#262730"
+font = "Sans serif"
+
+[runner]
+magicEnabled = true
+
+# 生产环境配置（可选）
+# [authentication]
+# enabled = false

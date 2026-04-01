@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+
+    <script>
+      !(function () {
+        'use strict';
+        !(function () {
+          const e = document.documentElement;
+          function n() {
+            const n = window.screen.width;
+            e.style.fontSize = (n / 750) * 100 + 'px';
+          }
+          n(), window.addEventListener('resize', n, !1);
+        })(),
+          (window.loadImage = function (e) {
+            return new Promise((n, t) => {
+              const o = new Image();
+              (o.onload = () => n(o)), (o.onerror = t), (o.src = e);
+            });
+          }),
+          (window.loadScript = function (e) {
+            return new Promise((n, t) => {
+              const o = document.createElement('script');
+              (o.src = e),
+                (o.onload = n),
+                (o.onerror = t),
+                document.head.appendChild(o);
+            });
+          }),
+          (window.startApp = function (e, n) {
+            __KERNEL__.bridge.invoke('startApp', e, n);
+          }),
+          (window.renderServiceCard = function (e, n, t, o) {
+            const r = e.shadowRoot || e.attachShadow({ mode: 'open' });
+            r.innerHTML = '';
+            const c = document.createElement('style');
+            c.textContent = t;
+            const d = document.createElement('div');
+            (d.innerHTML = n),
+              r.appendChild(c),
+              r.appendChild(d),
+              o &&
+                (function (e, n) {
+                  const t = new Proxy(document, {
+                    get: (e, t) => {
+                      if ('getElementById' === t)
+                        return (e) => n.getElementById(e);
+                      if ('querySelector' === t)
+                        return (e) => n.querySelector(e);
+                      if ('querySelectorAll' === t)
+                        return (e) => n.querySelectorAll(e);
+                      if ('body' === t) return n;
+                      const o = e[t];
+                      return 'function' == typeof o ? o.bind(e) : o;
+                    },
+                  });
+                  try {
+                    new Function('document', 'window', 'root', e)(t, window, n);
+                  } catch (e) {
+                    console.error('渲染代码执行出错:', e);
+                  }
+                })(o, r);
+          });
+      })();
+    </script>
+    <style>
+      html {
+        box-sizing: border-box;
+      }
+      *,
+      ::after,
+      ::before {
+        box-sizing: inherit;
+      }
+      :root {
+        --space-md: 0.24rem;
+        --space-lg: 0.4rem;
+        --radius-md: 0.24rem;
+        --radius-lg: 0.36rem;
+        --font-xs: 0.22rem;
+        --font-sm: 0.24rem;
+        --font-md: 0.28rem;
+        --font-lg: 0.32rem;
+        --font-xl: 0.48rem;
+        --text-primary-rgb: 51 51 51;
+        --text-primary: rgb(var(--text-rgb));
+        --theme-rgb: 22 119 255;
+        --theme-color: rgb(var(--theme-rgb));
+      }
+      body {
+        margin: 0;
+      }
+      h1,
+      h2 {
+        margin: var(--space-lg) 0 var(--space-md) 0;
+        font-weight: 700;
+      }
+      h1 {
+        /* font-family: 'Source Han Serif SC', 'STSong', serif; */
+        font-family: 'STSong', serif;
+        font-size: var(--font-xl);
+      }
+      h2 {
+        display: flex;
+        font-size: var(--font-lg);
+        align-items: center;
+      }
+      h2 > .label {
+        display: inline-block;
+        margin-right: 0.16rem;
+        width: 0.32rem;
+        height: 0.32rem;
+        color: var(--theme-color);
+        border-radius: 0.1rem;
+        font-size: var(--font-xs);
+        text-align: center;
+        line-height: 0.32rem;
+        background: rgb(var(--theme-rgb) / 0.1);
+        flex-shrink: 0;
+      }
+      p {
+        margin: var(--space-md) 0;
+      }
+      p.quote {
+        position: relative;
+        padding-left: 0.24rem;
+      }
+      p.quote::before {
+        position: absolute;
+        content: '';
+        top: 0;
+        left: 0;
+        bottom: 0;
+        width: 0.06rem;
+        background: rgb(var(--text-primary-rgb) / 0.1);
+      }
+      img,
+      p.highlight,
+      table {
+        border-radius: var(--radius-md);
+      }
+      p.highlight {
+        padding: var(--space-md);
+        background: rgb(var(--text-primary-rgb) / 0.04);
+      }
+      img,
+      table {
+        width: 100%;
+      }
+      ul {
+        padding-left: var(--space-md);
+      }
+      li {
+        margin-top: var(--space-md);
+      }
+      table {
+        margin: var(--space-md) 0;
+        padding: 0 var(--space-md);
+        background: #fefefe;
+        border-spacing: 0;
+        text-align: left;
+      }
+      td,
+      th {
+        padding: var(--space-md) 0;
+        border-bottom: 1px solid #e6e6e6;
+      }
+      tbody tr:last-child td,
+      tbody tr:last-child th {
+        border-bottom: none;
+      }
+      #root {
+        padding: 0 var(--space-md);
+        background-color: #fafafa;
+        font-size: var(--font-md);
+        font-family: 'PingFang SC', 'Noto Sans CJK SC', sans-serif;
+        letter-spacing: 0.01rem;
+        line-height: 1.5;
+        overflow: hidden;
+        border: 2px solid #fdfdfd;
+        border-radius: var(--radius-lg);
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root">
+      <h1>网球入门从零开始的第一步</h1>
+      <!-- 一级标题 -->
+      <h2>先了解公积金提取的前提条件</h2>
+      <h2>
+        <div class="label">1</div>
+        先了解公积金提取的前提条件
+      </h2>
+      <h2>
+        <div class="label">2</div>
+        先了解公积金提取的前提条件
+      </h2>
+      <p>
+        建议先尝试一次专业指导课，避免自学形成错误动作。通过一次体验课，你能快速判断自己是否真正喜欢这项运动
+      </p>
+      <ul>
+        <li>单节体验课价格通常在80-150元之间</li>
+        <li>教练会教你握拍、站位和基础挥拍动作</li>
+        <ul>
+          <li>单节体验课价格通常在80-150元之间</li>
+          <li>教练会教你握拍、站位和基础挥拍动作</li>
+        </ul>
+      </ul>
+      <table>
+        <thead>
+          <tr>
+            <th>项目</th>
+            <th>推荐配置</th>
+            <th>参考价格</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <th>球拍</th>
+            <td>270-280g</td>
+            <td>300-600元</td>
+          </tr>
+          <tr>
+            <th>球鞋</th>
+            <td>硬底网球鞋</td>
+            <td>500元</td>
+          </tr>
+          <tr>
+            <th>网球</th>
+            <td>训练专用羽毛球</td>
+            <td>30元/罐</td>
+          </tr>
+        </tbody>
+      </table>
+      <p class="quote">
+        王澍的建筑哲学不仅是技术或风格的探索，更是一种文化立场与人文精神的回归。他的普利兹克奖获奖，既是对其个人创作的肯定，也象征着国际建筑界对多元文化价值的拥抱——在现代化进程中，真正伟大的建筑可以既植根本土，又与世界对话。
+      </p>
+      <p class="highlight">
+        王澍的建筑哲学不仅是技术或风格的探索，更是一种文化立场与人文精神的回归。他的普利兹克奖获奖，既是对其个人创作的肯定，也象征着国际建筑界对多元文化价值的拥抱——在现代化进程中，真正伟大的建筑可以既植根本土，又与世界对话。
+      </p>
+    </div>
+    <!-- 样式仅建议使用内联样式 -->
+    <div id="service-0" class="component-service" component-type="service">
+      <!-- 内嵌生成服务卡片 -->
+      <!-- 此处为一些loading动效，暂时为空 -->
+    </div>
+
+    <!-- 后处理：后端服务请求成功时 -->
+    <script>
+      (function () {
+        const el = document.getElementById("service-0");
+        const html = ``;
+        const css = ``;
+        const js = ``;
+        if (!el) {
+          // 上报
+          return;
+        }
+        renderServiceCard(el, html, css, js);
+      })();
+    </script>
+
+    <!-- 后处理：后端服务超时或者结果数据标识为异常 -->
+    <script>
+      (function () {
+        const el = document.getElementById("service-0");
+        if (el) {
+          el.remove();
+        }
+      })();
+    </script>
+
+  </body>
+</html>

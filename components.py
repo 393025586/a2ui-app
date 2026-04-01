@@ -532,3 +532,384 @@ def wrap_html(content, user_query=""):
     {content}
 </body>
 </html>'''
+
+import re
+
+def simple_markdown(text):
+    """将简单 markdown 转为 HTML"""
+    if not text:
+        return ""
+    text = re.sub(r'\*\*(.+?)\*\*', r'<strong>\1</strong>', text)
+    text = re.sub(r'\*(.+?)\*', r'<em>\1</em>', text)
+    lines = text.split('\n')
+    result = []
+    in_list = False
+    for line in lines:
+        stripped = line.strip()
+        if stripped.startswith('- ') or stripped.startswith('* '):
+            if not in_list:
+                result.append('<ul style="margin:4px 0;padding-left:16px;">')
+                in_list = True
+            item = stripped[2:]
+            result.append(f'<li style="margin:2px 0;color:#374151;">{item}</li>')
+        else:
+            if in_list:
+                result.append('</ul>')
+                in_list = False
+            if stripped:
+                result.append(f'<p style="margin:4px 0;color:#374151;line-height:1.5;">{stripped}</p>')
+    if in_list:
+        result.append('</ul>')
+    return '\n'.join(result)
+
+def render_chat_html(user_query, agent_text="", component_html=""):
+    """渲染对话气泡 HTML 片段（不含 html/body 包装）"""
+    md_html = simple_markdown(agent_text)
+
+    agent_text_block = f'''
+        <div style="font-size:13px;line-height:1.6;color:#1f2937;">
+            {md_html}
+        </div>
+    ''' if md_html else ""
+
+    component_block = f'''
+        <div style="margin-top:{'8' if md_html else '0'}px;">
+            {component_html}
+        </div>
+    ''' if component_html else ""
+
+    return f'''
+    <div style="padding:12px 10px 20px 10px;">
+        <!-- 用户消息 -->
+        <div style="display:flex;justify-content:flex-end;margin-bottom:16px;">
+            <div style="
+                max-width:75%;
+                background:#95EC69;
+                color:#000;
+                padding:9px 12px;
+                border-radius:4px;
+                font-size:14px;
+                line-height:1.5;
+                word-break:break-word;
+                position:relative;
+            ">
+                <div style="
+                    position:absolute;
+                    top:12px;right:-6px;
+                    width:0;height:0;
+                    border-top:6px solid transparent;
+                    border-bottom:6px solid transparent;
+                    border-left:6px solid #95EC69;
+                "></div>
+                {user_query}
+            </div>
+            <div style="
+                width:36px;height:36px;
+                background:#7BC8F7;
+                border-radius:4px;
+                margin-left:8px;
+                flex-shrink:0;
+                display:flex;align-items:center;justify-content:center;
+                font-size:16px;color:#fff;font-weight:600;
+            ">Me</div>
+        </div>
+
+        <!-- Agent 回复 -->
+        <div style="display:flex;align-items:flex-start;margin-bottom:16px;">
+            <div style="
+                width:36px;height:36px;
+                background:linear-gradient(135deg,#667eea,#764ba2);
+                border-radius:4px;
+                margin-right:8px;
+                flex-shrink:0;
+                display:flex;align-items:center;justify-content:center;
+                font-size:14px;color:#fff;
+            ">AI</div>
+            <div style="max-width:80%;position:relative;">
+                <div style="
+                    position:absolute;
+                    top:12px;left:-6px;
+                    width:0;height:0;
+                    border-top:6px solid transparent;
+                    border-bottom:6px solid transparent;
+                    border-right:6px solid #fff;
+                "></div>
+                <div style="
+                    background:#fff;
+                    border-radius:4px;
+                    padding:10px 12px;
+                    word-break:break-word;
+                ">
+                    {agent_text_block}
+                    {component_block}
+                </div>
+            </div>
+        </div>
+    </div>
+    '''
+
+# ==============================================================================
+# 组件元数据目录 — 用于组件库展示
+# ==============================================================================
+
+COMPONENT_CATALOG = {
+    # ── 展示类 ──────────────────────────────────────────────
+    "Heading": {
+        "scope": "通用",
+        "category": "展示类",
+        "description": "页面标题组件，用于在内容顶部显示一级标题。适合作为一个回复卡片的开头，概括当前内容主题。",
+        "props": {"text": "标题文字"},
+        "example": {"type": "Heading", "text": "快递寄送服务"},
+    },
+    "Paragraph": {
+        "scope": "通用",
+        "category": "展示类",
+        "description": "正文段落组件，用于展示一段说明性文字。适合对服务、规则、注意事项进行简要文字描述，常跟在标题之后。",
+        "props": {"text": "段落内容"},
+        "example": {"type": "Paragraph", "text": "我们提供同城/跨城快递服务，预计 1-3 天送达，支持上门取件。"},
+    },
+    "BulletList": {
+        "scope": "通用",
+        "category": "展示类",
+        "description": "无序列表组件，将多条信息以列表形式呈现。适合罗列要点、步骤说明、注意事项等结构化文字信息。",
+        "props": {"items": "字符串数组，每项为一条列表内容"},
+        "example": {"type": "BulletList", "items": ["免费上门取件", "支持保价服务", "可实时查看物流轨迹"]},
+    },
+    "ServiceCard": {
+        "scope": "通用",
+        "category": "展示类",
+        "description": "服务卡片组件，展示一项服务的标题、副标题和标签。适合在多个服务选项中展示单项服务概要，如快递公司、生活缴费项目等。",
+        "props": {"title": "服务名称", "subtitle": "补充说明", "tag": "右上角标签（如'推荐'）"},
+        "example": {"type": "ServiceCard", "title": "顺丰速运", "subtitle": "预计明天 18:00 前送达", "tag": "推荐"},
+    },
+    "InfoTable": {
+        "scope": "通用",
+        "category": "展示类",
+        "description": "信息表格组件，以表格形式展示结构化数据。适合对比多项信息，如基金列表、费率对比、套餐方案等。",
+        "props": {"headers": "表头数组", "rows": "行数据数组，每行为 {name, rate, feature} 对象"},
+        "example": {"type": "InfoTable", "headers": ["产品", "费率", "特点"], "rows": [{"name": "余额宝", "rate": "2.1%", "feature": "随存随取"}, {"name": "定期理财", "rate": "3.5%", "feature": "封闭 30 天"}]},
+    },
+    "Notice": {
+        "scope": "通用",
+        "category": "展示类",
+        "description": "提示通知组件，以彩色横幅形式展示提示信息。type 可选 info（蓝色）、warning（橙色）、success（绿色）。适合在操作前后给用户重要提醒，如风险提示、温馨提醒、成功通知等。",
+        "props": {"type": "提示类型：info / warning / success", "title": "提示标题（可选）", "content": "提示正文"},
+        "example": {"type": "Notice", "type": "warning", "title": "安全提醒", "content": "请勿向陌生人透露验证码，谨防电信诈骗。"},
+    },
+    "SectionHeader": {
+        "scope": "通用",
+        "category": "展示类",
+        "description": "分组标题组件，左侧带竖线装饰的小标题。用于将回复内容分成多个视觉区块，如「寄件信息」「费用明细」等，帮助用户快速定位。",
+        "props": {"title": "标题文字", "subtitle": "副标题（可选）"},
+        "example": {"type": "SectionHeader", "title": "费用明细", "subtitle": "以下为预估费用"},
+    },
+    "Timeline": {
+        "scope": "通用",
+        "category": "展示类",
+        "description": "时间线组件，按时间顺序展示一系列事件。适合展示物流轨迹、订单状态历史、流程记录等有时序关系的信息。每个节点有状态标记（completed/current/pending）。",
+        "props": {"steps": "事件数组，每项含 {status, time, desc}"},
+        "example": {"type": "Timeline", "steps": [{"status": "completed", "time": "04-01 10:00", "desc": "快递已揽收"}, {"status": "current", "time": "04-01 15:30", "desc": "运输中，已到达杭州中转站"}, {"status": "pending", "time": "", "desc": "派送中"}]},
+    },
+    "StepProgress": {
+        "scope": "通用",
+        "category": "展示类",
+        "description": "步骤进度组件，以线性步骤条展示流程当前进度。current 指定当前所在步骤（0 起始）。适合寄件下单、申请审批等多步骤流程的进度可视化。",
+        "props": {"steps": "步骤名称数组", "current": "当前步骤索引（0 起始）"},
+        "example": {"type": "StepProgress", "steps": ["填写信息", "确认订单", "在线支付", "等待取件"], "current": 1},
+    },
+    "AddressItem": {
+        "scope": "行业特定",
+        "category": "展示类",
+        "description": "地址展示组件，只读展示一条地址信息，含类型标签、姓名、电话和详细地址。适合在订单确认页展示已选择的寄/收件地址。",
+        "props": {"type": "地址类型标签（如'寄件'/'收件'）", "name": "姓名", "phone": "电话", "address": "详细地址"},
+        "example": {"type": "AddressItem", "type": "收件", "name": "张三", "phone": "138****1234", "address": "浙江省杭州市西湖区文三路 123 号"},
+    },
+    "PackageInfo": {
+        "scope": "行业特定",
+        "category": "展示类",
+        "description": "包裹信息组件，横向展示包裹的重量、类型和保价金额。适合在快递订单中汇总展示包裹基本属性。",
+        "props": {"weight": "重量", "type": "包裹类型", "value": "保价金额"},
+        "example": {"type": "PackageInfo", "weight": "2.5kg", "type": "物品", "value": "¥500"},
+    },
+    "PriceCard": {
+        "scope": "通用",
+        "category": "展示类",
+        "description": "价格卡片组件，带「费用明细」标题的价格分项列表，底部显示合计。适合展示订单费用构成，如运费、包装费、保价费等。",
+        "props": {"items": "费用项数组 [{label, value}]", "total": "合计金额"},
+        "example": {"type": "PriceCard", "items": [{"label": "基础运费", "value": "¥12"}, {"label": "包装费", "value": "¥3"}, {"label": "保价费", "value": "¥2"}], "total": "¥17"},
+    },
+    "PriceDetail": {
+        "scope": "通用",
+        "category": "展示类",
+        "description": "价格明细组件，功能与 PriceCard 相同，同样展示分项费用和合计。两者可互换使用，提供给 LLM 更灵活的命名选择。",
+        "props": {"items": "费用项数组 [{label, value}]", "total": "合计金额"},
+        "example": {"type": "PriceDetail", "items": [{"label": "话费充值", "value": "¥100"}, {"label": "优惠减免", "value": "-¥5"}], "total": "¥95"},
+    },
+    "Coupon": {
+        "scope": "通用",
+        "category": "展示类",
+        "description": "优惠券组件，以橙色醒目卡片展示优惠信息。左侧显示标题和使用条件，右侧突出优惠金额。适合在支付前推荐可用优惠券。",
+        "props": {"title": "优惠券名称", "amount": "优惠金额", "condition": "使用条件（可选）"},
+        "example": {"type": "Coupon", "title": "新人专享运费券", "amount": "¥5", "condition": "满 15 元可用"},
+    },
+
+    # ── 输入/选择类 ────────────────────────────────────────
+    "AddressInput": {
+        "scope": "行业特定",
+        "category": "输入选择类",
+        "description": "地址输入组件，提供一个地址文本输入区域。用户可手动填写或从地址簿选择。适合需要用户提供地址的场景，如寄件地址、收货地址等。",
+        "props": {"label": "输入框标签", "placeholder": "占位提示文字", "value": "预填值（可选）"},
+        "example": {"type": "AddressInput", "label": "收货地址", "placeholder": "请输入详细地址", "value": ""},
+    },
+    "ContactInput": {
+        "scope": "行业特定",
+        "category": "输入选择类",
+        "description": "联系人输入组件，包含姓名和电话两个字段。适合在寄件、预约等场景收集联系人信息。",
+        "props": {"label": "标签", "name": "姓名预填值", "phone": "电话预填值"},
+        "example": {"type": "ContactInput", "label": "寄件人", "name": "", "phone": ""},
+    },
+    "PackageSelector": {
+        "scope": "行业特定",
+        "category": "输入选择类",
+        "description": "包裹类型选择器，以横向标签组展示选项，选中项高亮为蓝色。适合让用户快速选择包裹类型、文件类型等固定选项。",
+        "props": {"options": "选项数组", "selected": "默认选中索引"},
+        "example": {"type": "PackageSelector", "options": ["文件", "日用品", "数码产品", "生鲜食品"], "selected": 0},
+    },
+    "WeightSelector": {
+        "scope": "行业特定",
+        "category": "输入选择类",
+        "description": "重量选择器，左侧显示标签，右侧显示当前重量值和单位。适合快递寄件中让用户确认或调整包裹重量。",
+        "props": {"label": "标签", "value": "当前值", "unit": "单位"},
+        "example": {"type": "WeightSelector", "label": "包裹重量", "value": "2.5", "unit": "kg"},
+    },
+    "TimePicker": {
+        "scope": "行业特定",
+        "category": "输入选择类",
+        "description": "时间段选择器，以纵向列表展示可选时间段，选中项蓝色高亮。适合预约取件、预约上门服务等需要用户选择时间窗口的场景。",
+        "props": {"label": "标签", "slots": "时间段数组", "selected": "默认选中索引"},
+        "example": {"type": "TimePicker", "label": "期望取件时间", "slots": ["今天 14:00-16:00", "今天 16:00-18:00", "明天 09:00-11:00", "明天 14:00-16:00"], "selected": 0},
+    },
+    "TagOptions": {
+        "scope": "通用",
+        "category": "输入选择类",
+        "description": "标签选项组件，以可换行的标签按钮组让用户选择一个或多个选项。这是最通用的意图澄清组件，适合场景分类、偏好选择、功能入口等多选/单选场景。",
+        "props": {"label": "标签说明", "options": "选项数组", "selected": "已选中的值（字符串或数组）"},
+        "example": {"type": "TagOptions", "label": "你想办理哪项业务？", "options": ["话费充值", "流量包", "宽带续费", "账单查询"], "selected": "话费充值"},
+    },
+    "AmountOption": {
+        "scope": "通用",
+        "category": "输入选择类",
+        "description": "金额选项组件，以横向标签展示预设金额选项。适合话费充值、红包金额、转账金额等需要从固定金额中选择的场景。",
+        "props": {"label": "标签", "options": "金额选项数组", "selected": "默认选中索引"},
+        "example": {"type": "AmountOption", "label": "充值金额", "options": ["¥30", "¥50", "¥100", "¥200"], "selected": 2},
+    },
+    "ListOption": {
+        "scope": "通用",
+        "category": "输入选择类",
+        "description": "列表选项组件，每个选项为带标题和副标题的卡片，右侧有单选圆点。适合在多个方案/服务中选择一项，如快递公司选择、保险方案选择等。",
+        "props": {"label": "标签", "options": "选项数组 [{title, subtitle}]", "selected": "选中索引"},
+        "example": {"type": "ListOption", "label": "选择快递公司", "options": [{"title": "顺丰速运", "subtitle": "预计明天送达 · ¥23"}, {"title": "中通快递", "subtitle": "预计后天送达 · ¥12"}, {"title": "韵达快递", "subtitle": "预计后天送达 · ¥10"}], "selected": 0},
+    },
+    "Stepper": {
+        "scope": "通用",
+        "category": "输入选择类",
+        "description": "步进器组件，带 +/- 按钮的数值调节器。适合调整数量、重量、份数等数值型输入，用户可通过按钮快速增减。",
+        "props": {"label": "标签", "value": "当前值", "unit": "单位（可选）"},
+        "example": {"type": "Stepper", "label": "购买数量", "value": 2, "unit": "份"},
+    },
+    "TextInput": {
+        "scope": "通用",
+        "category": "输入选择类",
+        "description": "单行文本输入组件，提供一个简单的文本输入框。适合收集短文本信息，如姓名、快递单号、验证码等。",
+        "props": {"label": "标签", "placeholder": "占位提示", "value": "预填值"},
+        "example": {"type": "TextInput", "label": "快递单号", "placeholder": "请输入运单号", "value": ""},
+    },
+    "TextareaInput": {
+        "scope": "通用",
+        "category": "输入选择类",
+        "description": "多行文本输入组件，提供一个可输入多行文字的区域。适合收集备注、留言、问题描述等较长文本。",
+        "props": {"label": "标签", "placeholder": "占位提示", "value": "预填值"},
+        "example": {"type": "TextareaInput", "label": "备注信息", "placeholder": "如有特殊要求请在此说明", "value": ""},
+    },
+    "PhoneInput": {
+        "scope": "通用",
+        "category": "输入选择类",
+        "description": "手机号码输入组件，专用于手机号收集。适合注册、验证身份、联系人信息填写等需要手机号的场景。",
+        "props": {"label": "标签", "placeholder": "占位提示", "value": "预填值"},
+        "example": {"type": "PhoneInput", "label": "手机号码", "placeholder": "请输入 11 位手机号", "value": ""},
+    },
+    "AmountInput": {
+        "scope": "通用",
+        "category": "输入选择类",
+        "description": "金额输入组件，带 ¥ 前缀的金额输入框。适合自定义转账金额、充值金额、还款金额等需要用户手动输入金额的场景。",
+        "props": {"label": "标签", "placeholder": "占位提示", "value": "预填值"},
+        "example": {"type": "AmountInput", "label": "转账金额", "placeholder": "0.00", "value": ""},
+    },
+
+    # ── 按钮类 ──────────────────────────────────────────────
+    "ActionButton": {
+        "scope": "通用",
+        "category": "按钮类",
+        "description": "操作按钮组组件，可在一行内放置多个按钮（主要/次要）。适合同时提供「确认」和「取消」等多个并列操作选项。",
+        "props": {"actions": "按钮数组 [{label, type}]，type 可选 primary/secondary"},
+        "example": {"type": "ActionButton", "actions": [{"label": "取消", "type": "secondary"}, {"label": "确认提交", "type": "primary"}]},
+    },
+    "ConfirmButton": {
+        "scope": "通用",
+        "category": "按钮类",
+        "description": "确认按钮组件，全宽蓝色主按钮。最基础的操作按钮，适合表单提交、流程确认等单一操作。可通过 disabled 控制是否可点击。",
+        "props": {"label": "按钮文字", "disabled": "是否禁用（布尔值）"},
+        "example": {"type": "ConfirmButton", "label": "确认提交"},
+    },
+    "TextLink": {
+        "scope": "通用",
+        "category": "按钮类",
+        "description": "文字链接组件，以蓝色文字链接形式展示。适合「查看详情」「了解更多」等辅助跳转操作，不占据主视觉焦点。",
+        "props": {"text": "链接文字", "href": "跳转地址"},
+        "example": {"type": "TextLink", "text": "查看完整服务协议 →", "href": "#"},
+    },
+    "OrderButton": {
+        "scope": "通用",
+        "category": "按钮类",
+        "description": "下单按钮组件，全宽蓝色按钮，右侧显示价格。适合购物、寄件等需要展示总价的下单确认场景，让用户一目了然地看到操作和费用。",
+        "props": {"label": "按钮文字", "price": "显示金额", "disabled": "是否禁用"},
+        "example": {"type": "OrderButton", "label": "确认下单", "price": "¥23"},
+    },
+    "SubmitButton": {
+        "scope": "通用",
+        "category": "按钮类",
+        "description": "提交按钮组件，全宽蓝色按钮，可附带金额显示。适合提交表单、提交申请等场景。",
+        "props": {"label": "按钮文字", "price": "金额（可选）"},
+        "example": {"type": "SubmitButton", "label": "提交申请", "price": ""},
+    },
+    "PayButton": {
+        "scope": "通用",
+        "category": "按钮类",
+        "description": "支付按钮组件，全宽蓝色按钮，显示支付金额。适合支付确认页的最终操作按钮，如话费充值确认、订单支付等。",
+        "props": {"label": "按钮文字", "amount": "支付金额", "disabled": "是否禁用"},
+        "example": {"type": "PayButton", "label": "立即支付", "amount": "¥100"},
+    },
+    "AuthButton": {
+        "scope": "通用",
+        "category": "按钮类",
+        "description": "授权按钮组件，包含协议勾选框和授权按钮。用户需先勾选同意协议才能操作。适合开通服务、签约代扣等需要用户授权的场景。",
+        "props": {"label": "按钮文字", "agreement": "协议名称", "checked": "是否已勾选"},
+        "example": {"type": "AuthButton", "label": "同意并开通", "agreement": "《自动续费服务协议》", "checked": False},
+    },
+    "VerifyButton": {
+        "scope": "通用",
+        "category": "按钮类",
+        "description": "核身验证按钮组件，包含协议勾选、身份证号输入和验证按钮。适合实名认证、身份核验等需要提交身份信息的高安全级别操作。",
+        "props": {"label": "按钮文字", "agreement": "协议名称", "checked": "是否已勾选", "idNumber": "身份证号预填值"},
+        "example": {"type": "VerifyButton", "label": "实名认证", "agreement": "《隐私保护协议》", "checked": False, "idNumber": ""},
+    },
+
+    # ── 特殊组件 ────────────────────────────────────────────
+    "AddressCollector": {
+        "scope": "行业特定",
+        "category": "特殊组件",
+        "description": "地址收集表单组件，包含姓名、手机号、详细地址三个输入项，顶部有类型标签。这是快递寄件场景的核心组件，用于一次性收集完整的寄/收件地址信息。",
+        "props": {"type": "地址类型（如'寄件'/'收件'）", "name": "姓名预填值", "phone": "电话预填值", "address": "地址预填值"},
+        "example": {"type": "AddressCollector", "type": "寄件", "name": "", "phone": "", "address": ""},
+    },
+}

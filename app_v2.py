@@ -284,12 +284,11 @@ with tab_lib:
     n_industry = sum(1 for v in catalog.values() if v["scope"] == "行业特定")
 
     def render_scope_section(scope_name, scope_desc, scope_color, scope_bg):
-        """渲染一个 scope 分区下的所有组件"""
+        """渲染一个 scope 分区下的所有组件（列表式）"""
         scoped = {k: v for k, v in catalog.items() if v["scope"] == scope_name}
         if not scoped:
             return
 
-        # scope 大标题
         count = len(scoped)
         st.markdown(f'''
         <div style="margin:8px 0 4px 0;padding:16px 20px;background:{scope_bg};border-left:3px solid {scope_color};border-radius:0 8px 8px 0;">
@@ -301,7 +300,6 @@ with tab_lib:
         </div>
         ''', unsafe_allow_html=True)
 
-        # 按 category 分小组
         seen_cats = []
         for v in scoped.values():
             if v["category"] not in seen_cats:
@@ -314,48 +312,39 @@ with tab_lib:
 
             st.markdown(f'<div style="font-size:13px;font-weight:600;color:#475569;margin:16px 0 8px 4px;">{cat_icons.get(cat, "")} {cat}</div>', unsafe_allow_html=True)
 
-            keys = list(cat_items.keys())
-            for row_start in range(0, len(keys), 3):
-                cols = st.columns(3, gap="medium")
-                for col_idx, col in enumerate(cols):
-                    idx = row_start + col_idx
-                    if idx >= len(keys):
-                        break
-                    comp_name = keys[idx]
-                    info = cat_items[comp_name]
-                    props_tags = " ".join(
-                        f'<span style="display:inline-block;background:#F1F5F9;color:#475569;padding:1px 6px;border-radius:3px;font-size:10px;font-family:monospace;">{k}</span>'
-                        for k in info["props"].keys()
-                    )
-                    with col:
-                        # 实时渲染预览（占主视觉）
-                        preview_html = comp_lib.render_component(info["example"])
-                        wrapped = f'''<!DOCTYPE html><html><head>
-                            <meta charset="UTF-8">
-                            <script src="https://cdn.tailwindcss.com"></script>
-                            <style>* {{ margin:0;padding:0;box-sizing:border-box; }} body {{ font-family:-apple-system,sans-serif;background:#F8FAFC;padding:10px; }} ::-webkit-scrollbar {{ display:none; }}</style>
-                        </head><body>{preview_html}</body></html>'''
+            for comp_name, info in cat_items.items():
+                props_tags = " ".join(
+                    f'<span style="display:inline-block;background:#F1F5F9;color:#475569;padding:1px 6px;border-radius:3px;font-size:10px;font-family:monospace;">{k}</span>'
+                    for k in info["props"].keys()
+                )
 
-                        st.markdown(f'''
-                        <div style="border:1px solid #E2E8F0;border-radius:10px;overflow:hidden;margin-bottom:4px;background:#fff;">
-                            <div style="padding:12px 14px 8px 14px;">
-                                <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
-                                    <span style="font-size:14px;font-weight:700;color:#0F172A;font-family:monospace;">{comp_name}</span>
-                                    <span style="font-size:10px;background:#EEF2FF;color:#4F46E5;padding:2px 8px;border-radius:10px;">{info["category"]}</span>
-                                </div>
-                                <div style="font-size:12px;color:#64748B;line-height:1.55;">{info["description"]}</div>
-                            </div>
+                # 左：描述信息  右：实时预览
+                col_info, col_preview = st.columns([3, 2], gap="medium")
+
+                with col_info:
+                    st.markdown(f'''
+                    <div style="padding:12px 0;">
+                        <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px;">
+                            <span style="font-size:14px;font-weight:700;color:#0F172A;font-family:monospace;">{comp_name}</span>
+                            <span style="font-size:10px;background:#EEF2FF;color:#4F46E5;padding:2px 8px;border-radius:10px;">{info["category"]}</span>
                         </div>
-                        ''', unsafe_allow_html=True)
-                        stc.html(wrapped, height=100)
-                        st.markdown(f'''
-                        <div style="padding:0 4px;margin-bottom:16px;">
-                            <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;">
-                                {props_tags}
-                                <span style="margin-left:auto;font-size:10px;color:#CBD5E1;cursor:pointer;" title='{json.dumps(info["example"], ensure_ascii=False)}'>{{ }} JSON</span>
-                            </div>
+                        <div style="font-size:12px;color:#64748B;line-height:1.6;margin-bottom:8px;">{info["description"]}</div>
+                        <div style="display:flex;flex-wrap:wrap;gap:4px;align-items:center;">
+                            {props_tags}
                         </div>
-                        ''', unsafe_allow_html=True)
+                    </div>
+                    ''', unsafe_allow_html=True)
+
+                with col_preview:
+                    preview_html = comp_lib.render_component(info["example"])
+                    wrapped = f'''<!DOCTYPE html><html><head>
+                        <meta charset="UTF-8">
+                        <script src="https://cdn.tailwindcss.com"></script>
+                        <style>* {{ margin:0;padding:0;box-sizing:border-box; }} body {{ font-family:-apple-system,sans-serif;background:#F8FAFC;padding:10px; }} ::-webkit-scrollbar {{ display:none; }}</style>
+                    </head><body>{preview_html}</body></html>'''
+                    stc.html(wrapped, height=90)
+
+                st.markdown('<hr style="margin:0;border:none;border-top:1px solid #F1F5F9;">', unsafe_allow_html=True)
 
     # ── 通用组件 ──
     render_scope_section(

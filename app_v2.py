@@ -219,73 +219,93 @@ with tab_chat:
                 st.session_state.query, st.session_state.agent_text, component_html
             )
 
+            # iPhone 17 Pro: 393×852pt 屏幕，frame padding 10px → 413×872
+            # 缩放至 320px 显示宽度: scale = 320/413 ≈ 0.775
+            _SCALE = 0.775
+            _FRAME_W = 413
+            _FRAME_H = 872
+            _DISPLAY_H = int(_FRAME_H * _SCALE) + 8
+
             phone = f'''<!DOCTYPE html>
 <html>
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
+    {comp_lib.IOS_TAILWIND_CONFIG}
+    {comp_lib.IOS_BASE_STYLES}
     <style>
         * {{ margin: 0; padding: 0; box-sizing: border-box; }}
-        body {{ font-family: -apple-system, "SF Pro Text", sans-serif; background: transparent; }}
+        body {{ background: transparent; }}
         ::-webkit-scrollbar {{ display: none; }}
     </style>
 </head>
 <body>
     <div style="
-        width: 320px;
+        width: {_FRAME_W}px;
         margin: 0 auto;
-        background: linear-gradient(145deg, #2a2a3e, #1a1a2e);
-        border-radius: 50px;
-        padding: 10px;
-        box-shadow: 0 30px 80px rgba(0,0,0,0.3);
+        transform: scale({_SCALE});
+        transform-origin: top center;
     ">
+        <!-- iPhone 17 Pro 外壳 -->
         <div style="
-            width: 100%;
-            height: 600px;
-            background: #fff;
-            border-radius: 42px;
-            overflow: hidden;
-            position: relative;
-            display: flex;
-            flex-direction: column;
+            background: linear-gradient(145deg, #1d1d1f, #2c2c2e);
+            border-radius: 60px;
+            padding: 10px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.35);
         ">
-            <!-- 灵动岛 -->
-            <div style="position: absolute; top: 16px; left: 50%; transform: translateX(-50%); width: 90px; height: 26px; background: #000; border-radius: 14px; z-index: 100;"></div>
-            <!-- 状态栏 -->
-            <div style="position: absolute; top: 20px; left: 40px; font-size: 13px; font-weight: 600; color: #000; z-index: 99;">9:41</div>
-            <div style="position: absolute; top: 20px; right: 36px; font-size: 12px; z-index: 99;">📶 🔋</div>
-            <!-- 导航栏 -->
-            <div style="padding: 52px 0 8px 0; text-align: center; font-size: 14px; font-weight: 600; color: #1f2937; border-bottom: 0.5px solid #e5e7eb; background: #f7f7f7; flex-shrink: 0;">智能助手</div>
-            <!-- 聊天内容 -->
-            <div style="flex: 1; overflow-y: auto; background: #EDEDED;">
-                {chat_content}
-            </div>
-            <!-- 底部输入栏 -->
-            <div style="padding: 8px 10px; background: #f7f7f7; border-top: 0.5px solid #e5e7eb; display: flex; align-items: center; gap: 8px; flex-shrink: 0;">
-                <div style="flex: 1; background: #fff; border-radius: 4px; padding: 6px 10px; font-size: 12px; color: #bbb;">输入消息...</div>
-                <div style="width: 28px; height: 28px; background: #07C160; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 12px; color: #fff;">></div>
-            </div>
-            <!-- Home 条 -->
-            <div style="padding: 6px 0; text-align: center; flex-shrink: 0; background: #f7f7f7;">
-                <div style="width: 120px; height: 4px; background: #000; border-radius: 2px; opacity: 0.3; margin: 0 auto;"></div>
+            <!-- 屏幕 393×852 -->
+            <div style="
+                width: 393px;
+                height: 852px;
+                background: #fff;
+                border-radius: 52px;
+                overflow: hidden;
+                position: relative;
+                display: flex;
+                flex-direction: column;
+            ">
+                <!-- 灵动岛 -->
+                <div style="position:absolute; top:12px; left:50%; transform:translateX(-50%); width:126px; height:37px; background:#000; border-radius:20px; z-index:100;"></div>
+                <!-- 状态栏 -->
+                <div style="position:absolute; top:18px; left:36px; font-size:15px; font-weight:600; color:#000; z-index:99;">9:41</div>
+                <div style="position:absolute; top:18px; right:32px; font-size:14px; z-index:99;">
+                    <span style="margin-right:4px;">📶</span><span>🔋</span>
+                </div>
+                <!-- 导航栏 -->
+                <div style="padding:59px 16px 12px 16px; text-align:center; font-size:17px; font-weight:600; color:#000; border-bottom:0.5px solid #C6C6C8; background:#F2F2F7; flex-shrink:0;">智能助手</div>
+                <!-- 聊天区域 -->
+                <div style="flex:1; overflow-y:auto; background:#F2F2F7;">
+                    {chat_content}
+                </div>
+                <!-- 底部输入栏 -->
+                <div style="padding:8px 16px; background:#F2F2F7; border-top:0.5px solid #C6C6C8; display:flex; align-items:center; gap:8px; flex-shrink:0;">
+                    <div style="flex:1; background:#fff; border-radius:20px; padding:10px 16px; font-size:17px; color:#C7C7CC;">输入消息...</div>
+                    <div style="width:34px; height:34px; background:#007AFF; border-radius:50%; display:flex; align-items:center; justify-content:center;">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M8 14V3M8 3L3 8M8 3l5 5" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    </div>
+                </div>
+                <!-- Home 指示条 -->
+                <div style="padding:8px 0; text-align:center; flex-shrink:0; background:#F2F2F7;">
+                    <div style="width:134px; height:5px; background:#000; border-radius:3px; opacity:0.25; margin:0 auto;"></div>
+                </div>
             </div>
         </div>
     </div>
 </body>
 </html>'''
-            stc.html(phone, height=680)
+            stc.html(phone, height=_DISPLAY_H)
         else:
             st.markdown("""
             <div style="
-                width: 320px; height: 600px; margin: 0 auto;
-                background: #F1F3F4; border-radius: 42px;
-                border: 2px dashed #CBD5E1;
+                width: 320px; height: 676px; margin: 0 auto;
+                background: #F2F2F7; border-radius: 46px;
+                border: 2px dashed #C6C6C8;
                 display: flex; align-items: center; justify-content: center; flex-direction: column;
-                color: #94A3B8;
+                color: #8E8E93;
             ">
                 <div style="font-size: 40px; opacity: 0.4; margin-bottom: 12px;">📱</div>
-                <div style="font-size: 12px;">输入需求后预览</div>
+                <div style="font-size: 13px;">输入需求后预览</div>
             </div>
             """, unsafe_allow_html=True)
 
@@ -362,7 +382,9 @@ def _preview_html(comp_json):
     return f'''<!DOCTYPE html><html><head>
         <meta charset="UTF-8">
         <script src="https://cdn.tailwindcss.com"></script>
-        <style>* {{ margin:0;padding:0;box-sizing:border-box; }} body {{ font-family:-apple-system,sans-serif;background:#F8FAFC;padding:10px; }} ::-webkit-scrollbar {{ display:none; }}</style>
+        {comp_lib.IOS_TAILWIND_CONFIG}
+        {comp_lib.IOS_BASE_STYLES}
+        <style>* {{ margin:0;padding:0;box-sizing:border-box; }} body {{ background:#F2F2F7;padding:12px; }} ::-webkit-scrollbar {{ display:none; }}</style>
     </head><body>{html}</body></html>'''
 
 def _all_components_desc():

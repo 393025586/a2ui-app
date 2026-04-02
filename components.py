@@ -1,24 +1,69 @@
 """
-A2UI 组件渲染器 - 简洁草稿版
-定位：草稿生成器，注重核心逻辑表达
+A2UI 组件渲染器 — iOS HIG 风格
+基于 Apple Human Interface Guidelines 设计规范
 """
+
+import re
+
+# ══════════════════════════════════════════════════════════════════════════════
+# iOS Design Tokens — Tailwind CDN 配置 & 基础样式
+# ══════════════════════════════════════════════════════════════════════════════
+
+IOS_TAILWIND_CONFIG = """<script>
+tailwind.config = {
+    theme: {
+        extend: {
+            colors: {
+                ios: {
+                    blue: '#007AFF',
+                    green: '#34C759',
+                    orange: '#FF9500',
+                    red: '#FF3B30',
+                    label: '#000000',
+                    'label-2': '#8E8E93',
+                    'label-3': '#C7C7CC',
+                    separator: '#C6C6C8',
+                    'bg-2': '#F2F2F7',
+                    fill: '#E5E5EA',
+                }
+            },
+            borderRadius: {
+                ios: '10px',
+                'ios-sm': '8px',
+            },
+            boxShadow: {
+                ios: '0 1px 3px rgba(0,0,0,0.08)',
+            },
+        }
+    }
+}
+</script>"""
+
+IOS_BASE_STYLES = """<style>
+* { font-family: -apple-system, "SF Pro Text", "SF Pro Display", system-ui, sans-serif; }
+body { -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+</style>"""
+
+# ══════════════════════════════════════════════════════════════════════════════
+# 展示类组件
+# ══════════════════════════════════════════════════════════════════════════════
 
 def render_heading(comp):
     """标题"""
     text = comp.get("text", "")
-    return f'<h2 class="text-base font-bold text-slate-900 mb-2">{text}</h2>'
+    return f'<h2 class="text-[17px] leading-[22px] font-semibold text-ios-label mb-3">{text}</h2>'
 
 def render_paragraph(comp):
     """段落文本"""
     text = comp.get("text", "")
-    return f'<p class="text-sm text-slate-600 mb-2">{text}</p>'
+    return f'<p class="text-[15px] leading-[20px] text-ios-label-2 mb-3">{text}</p>'
 
 def render_bullet_list(comp):
     """列表"""
     items = comp.get("items", [])
-    html = '<ul class="text-sm text-slate-600 mb-2 space-y-1">'
+    html = '<ul class="text-[15px] leading-[20px] text-ios-label-2 mb-3 space-y-2">'
     for item in items:
-        html += f'<li class="pl-3 relative before:content-["·"] before:absolute before:left-0">{item}</li>'
+        html += f'<li class="pl-4 relative before:content-["•"] before:absolute before:left-0">{item}</li>'
     html += '</ul>'
     return html
 
@@ -28,9 +73,9 @@ def render_service_card(comp):
     subtitle = comp.get("subtitle", "")
     tag = comp.get("tag", "")
     return f'''
-    <div class="border border-slate-200 p-3 mb-2">
-        <div class="font-medium text-sm text-slate-900">{title} {f'<span class="text-xs text-blue-600 ml-1">[{tag}]</span>' if tag else ''}</div>
-        {f'<div class="text-xs text-slate-500 mt-1">{subtitle}</div>' if subtitle else ''}
+    <div class="bg-white rounded-ios shadow-ios p-4 mb-3">
+        <div class="font-semibold text-[17px] leading-[22px] text-ios-label">{title} {f'<span class="text-[12px] leading-[16px] text-ios-blue ml-1">[{tag}]</span>' if tag else ''}</div>
+        {f'<div class="text-[13px] leading-[18px] text-ios-label-2 mt-1">{subtitle}</div>' if subtitle else ''}
     </div>
     '''
 
@@ -38,16 +83,16 @@ def render_info_table(comp):
     """信息表格"""
     headers = comp.get("headers", [])
     rows = comp.get("rows", [])
-    html = '<div class="border border-slate-200 mb-2 text-xs"><table class="w-full">'
-    html += '<tr class="border-b border-slate-100">'
+    html = '<div class="bg-white rounded-ios shadow-ios mb-3 overflow-hidden"><table class="w-full">'
+    html += '<tr class="border-b border-ios-separator">'
     for h in headers:
-        html += f'<th class="p-2 text-left text-slate-400 font-normal">{h}</th>'
+        html += f'<th class="px-4 py-3 text-left text-[13px] leading-[18px] text-ios-label-2 font-normal">{h}</th>'
     html += '</tr>'
     for row in rows:
-        html += '<tr class="border-b border-slate-50">'
+        html += '<tr class="border-b border-ios-separator/30">'
         for key in ["name", "rate", "feature"]:
             if key in row:
-                html += f'<td class="p-2 text-slate-700">{row[key]}</td>'
+                html += f'<td class="px-4 py-3 text-[15px] leading-[20px] text-ios-label">{row[key]}</td>'
         html += '</tr>'
     html += '</table></div>'
     return html
@@ -59,10 +104,10 @@ def render_address_item(comp):
     phone = comp.get("phone", "")
     address = comp.get("address", "")
     return f'''
-    <div class="border border-slate-200 p-3 mb-2">
-        <div class="text-xs font-medium text-slate-500 mb-2">{type_label}</div>
-        <div class="text-sm text-slate-700">{name} {phone}</div>
-        <div class="text-xs text-slate-500 mt-1">{address}</div>
+    <div class="bg-white rounded-ios shadow-ios p-4 mb-3">
+        <div class="text-[12px] leading-[16px] font-medium text-ios-label-2 mb-2">{type_label}</div>
+        <div class="text-[17px] leading-[22px] text-ios-label">{name} {phone}</div>
+        <div class="text-[13px] leading-[18px] text-ios-label-2 mt-1">{address}</div>
     </div>
     '''
 
@@ -72,10 +117,10 @@ def render_package_info(comp):
     type_ = comp.get("type", "")
     value = comp.get("value", "")
     return f'''
-    <div class="border border-slate-200 p-3 mb-2 flex justify-between text-sm">
-        <div><span class="text-slate-400">重量:</span> {weight}</div>
-        <div><span class="text-slate-400">类型:</span> {type_}</div>
-        <div><span class="text-slate-400">保价:</span> {value}</div>
+    <div class="bg-white rounded-ios shadow-ios p-4 mb-3 flex justify-between text-[15px] leading-[20px]">
+        <div><span class="text-ios-label-2">重量:</span> <span class="text-ios-label">{weight}</span></div>
+        <div><span class="text-ios-label-2">类型:</span> <span class="text-ios-label">{type_}</span></div>
+        <div><span class="text-ios-label-2">保价:</span> <span class="text-ios-label">{value}</span></div>
     </div>
     '''
 
@@ -83,37 +128,37 @@ def render_price_card(comp):
     """价格卡片"""
     items = comp.get("items", [])
     total = comp.get("total", "¥0")
-    html = '<div class="border border-slate-200 p-3 mb-2"><div class="text-xs font-medium text-slate-500 mb-2">费用明细</div>'
+    html = '<div class="bg-white rounded-ios shadow-ios p-4 mb-3"><div class="text-[13px] leading-[18px] font-semibold text-ios-label-2 mb-3">费用明细</div>'
     for item in items:
-        html += f'<div class="flex justify-between text-sm mb-1"><span class="text-slate-600">{item.get("label","")}</span><span>{item.get("value","")}</span></div>'
-    html += f'<div class="flex justify-between text-sm pt-2 border-t border-slate-100 mt-2"><span class="font-medium">合计</span><span class="font-bold text-orange-600">{total}</span></div></div>'
+        html += f'<div class="flex justify-between text-[15px] leading-[20px] mb-2"><span class="text-ios-label-2">{item.get("label","")}</span><span class="text-ios-label">{item.get("value","")}</span></div>'
+    html += f'<div class="flex justify-between text-[15px] leading-[20px] pt-3 border-t border-ios-separator mt-3"><span class="font-semibold text-ios-label">合计</span><span class="font-bold text-ios-orange">{total}</span></div></div>'
     return html
 
 def render_timeline(comp):
     """时间线"""
     steps = comp.get("steps", [])
-    html = '<div class="border border-slate-200 p-3 mb-2">'
+    html = '<div class="bg-white rounded-ios shadow-ios p-4 mb-3">'
     for i, step in enumerate(steps):
         status = step.get("status", "pending")
         time = step.get("time", "")
         desc = step.get("desc", "")
-        dot = "●" if status == "completed" else "○" if status == "current" else "○"
-        color = "text-green-500" if status == "completed" else "text-blue-500" if status == "current" else "text-slate-300"
-        html += f'<div class="flex gap-2 text-sm mb-1"><span class="{color}">{dot}</span><span class="text-slate-400">{time}</span><span class="text-slate-700">{desc}</span></div>'
+        dot = "●" if status == "completed" else "◉" if status == "current" else "○"
+        color = "text-ios-green" if status == "completed" else "text-ios-blue" if status == "current" else "text-ios-label-3"
+        html += f'<div class="flex gap-3 text-[15px] leading-[20px] mb-2"><span class="{color}">{dot}</span><span class="text-ios-label-2 shrink-0">{time}</span><span class="text-ios-label">{desc}</span></div>'
     html += '</div>'
     return html
 
 def render_action_button(comp):
     """操作按钮组"""
     actions = comp.get("actions", [])
-    html = '<div class="flex gap-2 mb-2">'
+    html = '<div class="flex gap-3 mb-3">'
     for action in actions:
         label = action.get("label", "操作")
         type_ = action.get("type", "primary")
         if type_ == "primary":
-            html += f'<button class="flex-1 bg-blue-500 text-white py-2 text-sm font-medium">{label}</button>'
+            html += f'<button class="flex-1 bg-ios-blue text-white py-3 text-[17px] leading-[22px] font-semibold rounded-ios min-h-[44px]">{label}</button>'
         else:
-            html += f'<button class="flex-1 border border-slate-300 text-slate-700 py-2 text-sm">{label}</button>'
+            html += f'<button class="flex-1 border border-ios-separator text-ios-label py-3 text-[17px] leading-[22px] rounded-ios min-h-[44px]">{label}</button>'
     html += '</div>'
     return html
 
@@ -122,11 +167,16 @@ def render_notice(comp):
     type_ = comp.get("type", "info")
     title = comp.get("title", "")
     content = comp.get("content", "")
-    bg = "bg-blue-50 border-blue-200" if type_ == "info" else "bg-amber-50 border-amber-200" if type_ == "warning" else "bg-green-50 border-green-200"
+    colors = {
+        "info": "bg-blue-50 border-l-[3px] border-ios-blue",
+        "warning": "bg-orange-50 border-l-[3px] border-ios-orange",
+        "success": "bg-green-50 border-l-[3px] border-ios-green",
+    }
+    bg = colors.get(type_, colors["info"])
     return f'''
-    <div class="border {bg} p-3 mb-2 text-sm">
-        {f'<div class="font-medium text-slate-700 mb-1">{title}</div>' if title else ''}
-        <div class="text-slate-600">{content}</div>
+    <div class="{bg} rounded-ios p-4 mb-3">
+        {f'<div class="font-semibold text-[17px] leading-[22px] text-ios-label mb-1">{title}</div>' if title else ''}
+        <div class="text-[15px] leading-[20px] text-ios-label-2">{content}</div>
     </div>
     '''
 
@@ -135,9 +185,9 @@ def render_section_header(comp):
     title = comp.get("title", "")
     subtitle = comp.get("subtitle", "")
     return f'''
-    <div class="border-l-2 border-slate-300 pl-2 mb-2">
-        <div class="text-sm font-bold text-slate-800">{title}</div>
-        {f'<div class="text-xs text-slate-400">{subtitle}</div>' if subtitle else ''}
+    <div class="border-l-[3px] border-ios-blue pl-3 mb-3">
+        <div class="text-[17px] leading-[22px] font-semibold text-ios-label">{title}</div>
+        {f'<div class="text-[13px] leading-[18px] text-ios-label-2">{subtitle}</div>' if subtitle else ''}
     </div>
     '''
 
@@ -145,13 +195,13 @@ def render_step_progress(comp):
     """步骤进度"""
     steps = comp.get("steps", [])
     current = comp.get("current", 0)
-    html = '<div class="border border-slate-200 p-3 mb-2">'
+    html = '<div class="bg-white rounded-ios shadow-ios p-4 mb-3">'
     for i, step in enumerate(steps):
         status = "completed" if i < current else "current" if i == current else "pending"
-        dot = "●" if status == "completed" else "○" if status == "current" else "○"
-        color = "text-green-500" if status == "completed" else "text-blue-500" if status == "current" else "text-slate-300"
-        text_color = "text-slate-400" if status == "pending" else "text-slate-700"
-        html += f'<div class="flex gap-2 text-xs mb-1"><span class="{color}">{dot}</span><span class="{text_color}">{step}</span></div>'
+        dot = "●" if status == "completed" else "◉" if status == "current" else "○"
+        color = "text-ios-green" if status == "completed" else "text-ios-blue" if status == "current" else "text-ios-label-3"
+        text_color = "text-ios-label-3" if status == "pending" else "text-ios-label"
+        html += f'<div class="flex gap-3 text-[13px] leading-[18px] mb-2"><span class="{color}">{dot}</span><span class="{text_color}">{step}</span></div>'
     html += '</div>'
     return html
 
@@ -160,10 +210,11 @@ def render_address_input(comp):
     label = comp.get("label", "")
     placeholder = comp.get("placeholder", "")
     value = comp.get("value", "")
+    text_cls = "text-ios-label" if value else "text-ios-label-3"
     return f'''
-    <div class="border border-slate-200 p-3 mb-2">
-        {f'<div class="text-xs font-medium text-slate-500 mb-2">{label}</div>' if label else ''}
-        <div class="bg-slate-50 p-2 text-sm text-slate-600">{value if value else placeholder}</div>
+    <div class="bg-white rounded-ios shadow-ios p-4 mb-3">
+        {f'<div class="text-[13px] leading-[18px] font-medium text-ios-label-2 mb-2">{label}</div>' if label else ''}
+        <div class="bg-ios-bg-2 rounded-ios-sm p-3 text-[15px] leading-[20px] {text_cls}">{value if value else placeholder}</div>
     </div>
     '''
 
@@ -172,10 +223,12 @@ def render_contact_input(comp):
     label = comp.get("label", "联系人")
     name = comp.get("name", "")
     phone = comp.get("phone", "")
+    name_cls = "text-ios-label" if name else "text-ios-label-3"
+    phone_cls = "text-ios-label" if phone else "text-ios-label-3"
     return f'''
-    <div class="border border-slate-200 p-3 mb-2">
-        <div class="text-xs font-medium text-slate-500 mb-2">{label}</div>
-        <div class="text-sm text-slate-700">{name or "姓名"} | {phone or "电话"}</div>
+    <div class="bg-white rounded-ios shadow-ios p-4 mb-3">
+        <div class="text-[13px] leading-[18px] font-medium text-ios-label-2 mb-2">{label}</div>
+        <div class="text-[15px] leading-[20px]"><span class="{name_cls}">{name or "姓名"}</span> <span class="text-ios-separator">|</span> <span class="{phone_cls}">{phone or "电话"}</span></div>
     </div>
     '''
 
@@ -183,12 +236,12 @@ def render_package_selector(comp):
     """包裹类型选择"""
     options = comp.get("options", [])
     selected = comp.get("selected", 0)
-    html = '<div class="border border-slate-200 p-3 mb-2"><div class="text-xs font-medium text-slate-500 mb-2">包裹类型</div><div class="flex gap-2">'
+    html = '<div class="bg-white rounded-ios shadow-ios p-4 mb-3"><div class="text-[13px] leading-[18px] font-medium text-ios-label-2 mb-3">包裹类型</div><div class="flex flex-wrap gap-2">'
     for i, opt in enumerate(options):
         if i == selected:
-            html += f'<span class="bg-blue-500 text-white px-3 py-1 text-sm">{opt}</span>'
+            html += f'<span class="bg-ios-blue text-white px-4 py-2 rounded-full text-[15px] leading-[20px]">{opt}</span>'
         else:
-            html += f'<span class="bg-slate-100 text-slate-600 px-3 py-1 text-sm">{opt}</span>'
+            html += f'<span class="bg-ios-fill text-ios-label px-4 py-2 rounded-full text-[15px] leading-[20px]">{opt}</span>'
     html += '</div></div>'
     return html
 
@@ -198,9 +251,9 @@ def render_weight_selector(comp):
     value = comp.get("value", "1")
     unit = comp.get("unit", "kg")
     return f'''
-    <div class="border border-slate-200 p-3 mb-2 flex justify-between items-center">
-        <span class="text-xs font-medium text-slate-500">{label}</span>
-        <span class="text-sm font-bold">{value}{unit}</span>
+    <div class="bg-white rounded-ios shadow-ios p-4 mb-3 flex justify-between items-center min-h-[44px]">
+        <span class="text-[15px] leading-[20px] text-ios-label-2">{label}</span>
+        <span class="text-[17px] leading-[22px] font-semibold text-ios-label">{value}{unit}</span>
     </div>
     '''
 
@@ -209,12 +262,12 @@ def render_time_picker(comp):
     label = comp.get("label", "期望时间")
     slots = comp.get("slots", [])
     selected = comp.get("selected", 0)
-    html = f'<div class="border border-slate-200 p-3 mb-2"><div class="text-xs font-medium text-slate-500 mb-2">{label}</div>'
+    html = f'<div class="bg-white rounded-ios shadow-ios p-4 mb-3"><div class="text-[13px] leading-[18px] font-medium text-ios-label-2 mb-3">{label}</div>'
     for i, slot in enumerate(slots):
         if i == selected:
-            html += f'<div class="bg-blue-500 text-white px-3 py-1 text-sm mb-1">{slot}</div>'
+            html += f'<div class="bg-ios-blue text-white px-4 py-3 rounded-ios text-[15px] leading-[20px] mb-2">{slot}</div>'
         else:
-            html += f'<div class="bg-slate-50 text-slate-600 px-3 py-1 text-sm mb-1">{slot}</div>'
+            html += f'<div class="bg-ios-bg-2 text-ios-label px-4 py-3 rounded-ios text-[15px] leading-[20px] mb-2">{slot}</div>'
     html += '</div>'
     return html
 
@@ -222,10 +275,10 @@ def render_price_detail(comp):
     """价格明细"""
     items = comp.get("items", [])
     total = comp.get("total", "¥0")
-    html = '<div class="border border-slate-200 p-3 mb-2"><div class="text-xs font-medium text-slate-500 mb-2">费用明细</div>'
+    html = '<div class="bg-white rounded-ios shadow-ios p-4 mb-3"><div class="text-[13px] leading-[18px] font-semibold text-ios-label-2 mb-3">费用明细</div>'
     for item in items:
-        html += f'<div class="flex justify-between text-sm mb-1"><span class="text-slate-600">{item.get("label","")}</span><span>{item.get("value","")}</span></div>'
-    html += f'<div class="flex justify-between text-sm pt-2 border-t border-slate-100 mt-2"><span class="font-medium">合计</span><span class="font-bold text-orange-600">{total}</span></div></div>'
+        html += f'<div class="flex justify-between text-[15px] leading-[20px] mb-2"><span class="text-ios-label-2">{item.get("label","")}</span><span class="text-ios-label">{item.get("value","")}</span></div>'
+    html += f'<div class="flex justify-between text-[15px] leading-[20px] pt-3 border-t border-ios-separator mt-3"><span class="font-semibold text-ios-label">合计</span><span class="font-bold text-ios-orange">{total}</span></div></div>'
     return html
 
 def render_coupon(comp):
@@ -234,12 +287,12 @@ def render_coupon(comp):
     amount = comp.get("amount", "")
     condition = comp.get("condition", "")
     return f'''
-    <div class="border border-orange-200 bg-orange-50 p-3 mb-2 flex justify-between items-center">
+    <div class="bg-orange-50 border border-ios-orange/20 rounded-ios shadow-ios p-4 mb-3 flex justify-between items-center">
         <div>
-            <div class="text-sm font-medium text-orange-800">{title}</div>
-            {f'<div class="text-xs text-orange-600">{condition}</div>' if condition else ''}
+            <div class="text-[17px] leading-[22px] font-semibold text-ios-label">{title}</div>
+            {f'<div class="text-[13px] leading-[18px] text-ios-orange mt-1">{condition}</div>' if condition else ''}
         </div>
-        <div class="text-lg font-bold text-orange-600">{amount}</div>
+        <div class="text-2xl font-bold text-ios-orange">{amount}</div>
     </div>
     '''
 
@@ -247,7 +300,7 @@ def render_submit_button(comp):
     """提交按钮"""
     label = comp.get("label", "提交")
     price = comp.get("price", "")
-    return f'<button class="w-full bg-blue-500 text-white py-2 text-sm font-medium mb-2">{label} {price}</button>'
+    return f'<button class="w-full bg-ios-blue text-white py-3 text-[17px] leading-[22px] font-semibold rounded-ios min-h-[44px] mb-3">{label} {price}</button>'
 
 # ==============================================================================
 # 意图澄清组件
@@ -258,15 +311,15 @@ def render_tag_options(comp):
     label = comp.get("label", "")
     options = comp.get("options", [])
     selected = comp.get("selected", None)
-    html = f'<div class="border border-slate-200 p-3 mb-2">'
-    html += f'<div class="text-xs font-medium text-slate-500 mb-2">{label}</div>' if label else ''
+    html = f'<div class="bg-white rounded-ios shadow-ios p-4 mb-3">'
+    html += f'<div class="text-[13px] leading-[18px] font-medium text-ios-label-2 mb-3">{label}</div>' if label else ''
     html += '<div class="flex flex-wrap gap-2">'
     for opt in options:
         is_selected = (isinstance(selected, list) and opt in selected) or opt == selected
         if is_selected:
-            html += f'<span class="bg-blue-500 text-white px-3 py-1 text-sm">{opt}</span>'
+            html += f'<span class="bg-ios-blue text-white px-4 py-2 rounded-full text-[15px] leading-[20px]">{opt}</span>'
         else:
-            html += f'<span class="bg-slate-100 text-slate-600 px-3 py-1 text-sm">{opt}</span>'
+            html += f'<span class="bg-ios-fill text-ios-label px-4 py-2 rounded-full text-[15px] leading-[20px]">{opt}</span>'
     html += '</div></div>'
     return html
 
@@ -275,12 +328,12 @@ def render_amount_option(comp):
     label = comp.get("label", "选择金额")
     options = comp.get("options", [])
     selected = comp.get("selected", 0)
-    html = f'<div class="border border-slate-200 p-3 mb-2"><div class="text-xs font-medium text-slate-500 mb-2">{label}</div><div class="flex gap-2">'
+    html = f'<div class="bg-white rounded-ios shadow-ios p-4 mb-3"><div class="text-[13px] leading-[18px] font-medium text-ios-label-2 mb-3">{label}</div><div class="flex flex-wrap gap-2">'
     for i, opt in enumerate(options):
         if i == selected:
-            html += f'<span class="bg-blue-500 text-white px-3 py-1 text-sm">{opt}</span>'
+            html += f'<span class="bg-ios-blue text-white px-4 py-2 rounded-full text-[15px] leading-[20px]">{opt}</span>'
         else:
-            html += f'<span class="bg-slate-50 text-slate-600 px-3 py-1 text-sm">{opt}</span>'
+            html += f'<span class="bg-ios-fill text-ios-label px-4 py-2 rounded-full text-[15px] leading-[20px]">{opt}</span>'
     html += '</div></div>'
     return html
 
@@ -289,21 +342,21 @@ def render_list_option(comp):
     label = comp.get("label", "")
     options = comp.get("options", [])
     selected = comp.get("selected", None)
-    html = f'<div class="border border-slate-200 p-3 mb-2">'
-    html += f'<div class="text-xs font-medium text-slate-500 mb-2">{label}</div>' if label else ''
+    html = f'<div class="bg-white rounded-ios shadow-ios p-4 mb-3">'
+    html += f'<div class="text-[13px] leading-[18px] font-medium text-ios-label-2 mb-3">{label}</div>' if label else ''
     for i, opt in enumerate(options):
         title = opt.get("title", "")
         subtitle = opt.get("subtitle", "")
         is_selected = i == selected
-        border = "border-blue-500 bg-blue-50" if is_selected else "border-slate-200"
+        border = "border-ios-blue bg-blue-50" if is_selected else "border-ios-separator/50"
         check = "●" if is_selected else "○"
         html += f'''
-        <div class="border {border} p-2 mb-1 flex justify-between items-center">
+        <div class="border {border} rounded-ios p-3 mb-2 flex justify-between items-center min-h-[44px]">
             <div>
-                <div class="text-sm text-slate-700">{title}</div>
-                {f'<div class="text-xs text-slate-400">{subtitle}</div>' if subtitle else ''}
+                <div class="text-[15px] leading-[20px] text-ios-label">{title}</div>
+                {f'<div class="text-[13px] leading-[18px] text-ios-label-2">{subtitle}</div>' if subtitle else ''}
             </div>
-            <span class="text-blue-500">{check}</span>
+            <span class="text-ios-blue text-[16px]">{check}</span>
         </div>
         '''
     html += '</div>'
@@ -315,14 +368,14 @@ def render_stepper(comp):
     value = comp.get("value", 1)
     unit = comp.get("unit", "")
     return f'''
-    <div class="border border-slate-200 p-3 mb-2 flex justify-between items-center">
-        <span class="text-xs font-medium text-slate-500">{label}</span>
-        <div class="flex items-center gap-2">
-            <span class="w-6 h-6 bg-slate-100 text-center leading-6 text-sm">-</span>
-            <span class="text-sm font-bold">{value}</span>
-            <span class="w-6 h-6 bg-blue-500 text-white text-center leading-6 text-sm">+</span>
+    <div class="bg-white rounded-ios shadow-ios p-4 mb-3 flex justify-between items-center min-h-[44px]">
+        <span class="text-[15px] leading-[20px] text-ios-label-2">{label}</span>
+        <div class="flex items-center gap-3">
+            <span class="w-8 h-8 bg-ios-fill rounded-full text-center leading-8 text-[17px] text-ios-label">−</span>
+            <span class="text-[17px] leading-[22px] font-semibold text-ios-label">{value}</span>
+            <span class="w-8 h-8 bg-ios-blue text-white rounded-full text-center leading-8 text-[17px]">+</span>
         </div>
-        {f'<span class="text-xs text-slate-400">{unit}</span>' if unit else ''}
+        {f'<span class="text-[13px] leading-[18px] text-ios-label-2">{unit}</span>' if unit else ''}
     </div>
     '''
 
@@ -331,10 +384,11 @@ def render_text_input(comp):
     label = comp.get("label", "")
     placeholder = comp.get("placeholder", "请输入")
     value = comp.get("value", "")
+    text_cls = "text-ios-label" if value else "text-ios-label-3"
     return f'''
-    <div class="border border-slate-200 p-3 mb-2">
-        {f'<div class="text-xs font-medium text-slate-500 mb-2">{label}</div>' if label else ''}
-        <div class="bg-slate-50 p-2 text-sm text-slate-600">{value if value else placeholder}</div>
+    <div class="bg-white rounded-ios shadow-ios p-4 mb-3">
+        {f'<div class="text-[13px] leading-[18px] font-medium text-ios-label-2 mb-2">{label}</div>' if label else ''}
+        <div class="bg-ios-bg-2 rounded-ios-sm p-3 text-[15px] leading-[20px] {text_cls}">{value if value else placeholder}</div>
     </div>
     '''
 
@@ -343,10 +397,11 @@ def render_textarea_input(comp):
     label = comp.get("label", "")
     placeholder = comp.get("placeholder", "请输入内容")
     value = comp.get("value", "")
+    text_cls = "text-ios-label" if value else "text-ios-label-3"
     return f'''
-    <div class="border border-slate-200 p-3 mb-2">
-        {f'<div class="text-xs font-medium text-slate-500 mb-2">{label}</div>' if label else ''}
-        <div class="bg-slate-50 p-2 text-sm text-slate-600 min-h-[60px]">{value if value else placeholder}</div>
+    <div class="bg-white rounded-ios shadow-ios p-4 mb-3">
+        {f'<div class="text-[13px] leading-[18px] font-medium text-ios-label-2 mb-2">{label}</div>' if label else ''}
+        <div class="bg-ios-bg-2 rounded-ios-sm p-3 text-[15px] leading-[20px] {text_cls} min-h-[80px]">{value if value else placeholder}</div>
     </div>
     '''
 
@@ -355,10 +410,11 @@ def render_phone_input(comp):
     label = comp.get("label", "手机号码")
     placeholder = comp.get("placeholder", "请输入手机号")
     value = comp.get("value", "")
+    text_cls = "text-ios-label" if value else "text-ios-label-3"
     return f'''
-    <div class="border border-slate-200 p-3 mb-2">
-        {f'<div class="text-xs font-medium text-slate-500 mb-2">{label}</div>' if label else ''}
-        <div class="bg-slate-50 p-2 text-sm text-slate-600">{value if value else placeholder}</div>
+    <div class="bg-white rounded-ios shadow-ios p-4 mb-3">
+        {f'<div class="text-[13px] leading-[18px] font-medium text-ios-label-2 mb-2">{label}</div>' if label else ''}
+        <div class="bg-ios-bg-2 rounded-ios-sm p-3 text-[15px] leading-[20px] {text_cls}">{value if value else placeholder}</div>
     </div>
     '''
 
@@ -367,10 +423,11 @@ def render_amount_input(comp):
     label = comp.get("label", "金额")
     placeholder = comp.get("placeholder", "0.00")
     value = comp.get("value", "")
+    text_cls = "text-ios-label" if value else "text-ios-label-3"
     return f'''
-    <div class="border border-slate-200 p-3 mb-2">
-        {f'<div class="text-xs font-medium text-slate-500 mb-2">{label}</div>' if label else ''}
-        <div class="bg-slate-50 p-2 text-sm text-slate-600">¥ {value if value else placeholder}</div>
+    <div class="bg-white rounded-ios shadow-ios p-4 mb-3">
+        {f'<div class="text-[13px] leading-[18px] font-medium text-ios-label-2 mb-2">{label}</div>' if label else ''}
+        <div class="bg-ios-bg-2 rounded-ios-sm p-3 text-[15px] leading-[20px] {text_cls}">¥ {value if value else placeholder}</div>
     </div>
     '''
 
@@ -378,22 +435,22 @@ def render_confirm_button(comp):
     """确认按钮"""
     label = comp.get("label", "确认")
     disabled = comp.get("disabled", False)
-    bg = "bg-slate-200 text-slate-400" if disabled else "bg-blue-500 text-white"
-    return f'<button class="w-full {bg} py-2 text-sm font-medium mb-2">{label}</button>'
+    bg = "bg-ios-fill text-ios-label-3" if disabled else "bg-ios-blue text-white"
+    return f'<button class="w-full {bg} py-3 text-[17px] leading-[22px] font-semibold rounded-ios min-h-[44px] mb-3">{label}</button>'
 
 def render_text_link(comp):
     """文字链接"""
     text = comp.get("text", "查看详情")
     href = comp.get("href", "#")
-    return f'<a href="{href}" class="text-sm text-blue-500 mb-2 block">{text}</a>'
+    return f'<a href="{href}" class="text-[15px] leading-[20px] text-ios-blue mb-3 block">{text}</a>'
 
 def render_order_button(comp):
     """下单按钮"""
     label = comp.get("label", "立即下单")
     price = comp.get("price", "¥0")
     disabled = comp.get("disabled", False)
-    bg = "bg-slate-200 text-slate-400" if disabled else "bg-blue-500 text-white"
-    return f'<button class="w-full {bg} py-2 text-sm font-medium mb-2">{label} · {price}</button>'
+    bg = "bg-ios-fill text-ios-label-3" if disabled else "bg-ios-blue text-white"
+    return f'<button class="w-full {bg} py-3 text-[17px] leading-[22px] font-semibold rounded-ios min-h-[44px] mb-3">{label} · {price}</button>'
 
 def render_address_collector(comp):
     """收/寄件地址收集"""
@@ -401,13 +458,16 @@ def render_address_collector(comp):
     name = comp.get("name", "")
     phone = comp.get("phone", "")
     address = comp.get("address", "")
+    name_cls = "text-ios-label" if name else "text-ios-label-3"
+    phone_cls = "text-ios-label" if phone else "text-ios-label-3"
+    addr_cls = "text-ios-label" if address else "text-ios-label-3"
     return f'''
-    <div class="border border-slate-200 p-3 mb-2">
-        <div class="text-xs font-medium text-slate-500 mb-2">{type_}地址</div>
+    <div class="bg-white rounded-ios shadow-ios p-4 mb-3">
+        <div class="text-[13px] leading-[18px] font-medium text-ios-label-2 mb-3">{type_}地址</div>
         <div class="space-y-2">
-            <div class="bg-slate-50 p-2 text-sm text-slate-600">{name or "姓名"}</div>
-            <div class="bg-slate-50 p-2 text-sm text-slate-600">{phone or "手机号"}</div>
-            <div class="bg-slate-50 p-2 text-sm text-slate-600">{address or "详细地址"}</div>
+            <div class="bg-ios-bg-2 rounded-ios-sm p-3 text-[15px] leading-[20px] {name_cls}">{name or "姓名"}</div>
+            <div class="bg-ios-bg-2 rounded-ios-sm p-3 text-[15px] leading-[20px] {phone_cls}">{phone or "手机号"}</div>
+            <div class="bg-ios-bg-2 rounded-ios-sm p-3 text-[15px] leading-[20px] {addr_cls}">{address or "详细地址"}</div>
         </div>
     </div>
     '''
@@ -419,12 +479,12 @@ def render_auth_button(comp):
     checked = comp.get("checked", False)
     check = "☑" if checked else "☐"
     return f'''
-    <div class="mb-2">
-        <div class="flex items-center gap-2 mb-2 text-sm text-slate-600">
-            <span class="text-blue-500">{check}</span>
+    <div class="mb-3">
+        <div class="flex items-center gap-2 mb-3 text-[15px] leading-[20px] text-ios-label-2">
+            <span class="text-ios-blue">{check}</span>
             <span>同意{agreement}</span>
         </div>
-        <button class="w-full bg-blue-500 text-white py-2 text-sm font-medium">{label}</button>
+        <button class="w-full bg-ios-blue text-white py-3 text-[17px] leading-[22px] font-semibold rounded-ios min-h-[44px]">{label}</button>
     </div>
     '''
 
@@ -435,14 +495,15 @@ def render_verify_button(comp):
     checked = comp.get("checked", False)
     id_number = comp.get("idNumber", "")
     check = "☑" if checked else "☐"
+    id_cls = "text-ios-label" if id_number else "text-ios-label-3"
     return f'''
-    <div class="mb-2">
-        <div class="flex items-center gap-2 mb-2 text-sm text-slate-600">
-            <span class="text-blue-500">{check}</span>
+    <div class="mb-3">
+        <div class="flex items-center gap-2 mb-3 text-[15px] leading-[20px] text-ios-label-2">
+            <span class="text-ios-blue">{check}</span>
             <span>同意{agreement}</span>
         </div>
-        {f'<div class="bg-slate-50 p-2 text-sm text-slate-600 mb-2">{id_number or "身份证号"}</div>' if id_number is not None else ''}
-        <button class="w-full bg-blue-500 text-white py-2 text-sm font-medium">{label}</button>
+        {f'<div class="bg-ios-bg-2 rounded-ios-sm p-3 text-[15px] leading-[20px] {id_cls} mb-3">{id_number or "身份证号"}</div>' if id_number is not None else ''}
+        <button class="w-full bg-ios-blue text-white py-3 text-[17px] leading-[22px] font-semibold rounded-ios min-h-[44px]">{label}</button>
     </div>
     '''
 
@@ -451,8 +512,8 @@ def render_pay_button(comp):
     label = comp.get("label", "立即支付")
     amount = comp.get("amount", "¥0")
     disabled = comp.get("disabled", False)
-    bg = "bg-slate-200 text-slate-400" if disabled else "bg-blue-500 text-white"
-    return f'<button class="w-full {bg} py-2 text-sm font-medium mb-2">{label} · {amount}</button>'
+    bg = "bg-ios-fill text-ios-label-3" if disabled else "bg-ios-blue text-white"
+    return f'<button class="w-full {bg} py-3 text-[17px] leading-[22px] font-semibold rounded-ios min-h-[44px] mb-3">{label} · {amount}</button>'
 
 # ==============================================================================
 # 渲染器映射
@@ -505,11 +566,11 @@ def render_component(comp):
         comp = {**comp, **comp["props"]}
     renderer = RENDERERS.get(comp_type)
     if not renderer:
-        return f'<div class="border border-dashed border-slate-300 p-2 text-xs text-slate-400 mb-2">[{comp_type}]</div>'
+        return f'<div class="border border-dashed border-ios-separator rounded-ios p-3 text-[13px] leading-[18px] text-ios-label-3 mb-3">[{comp_type}]</div>'
     try:
         return renderer(comp)
     except Exception as e:
-        return f'<div class="border border-red-200 bg-red-50 p-2 text-xs text-red-400 mb-2">error: {comp_type}</div>'
+        return f'<div class="border border-ios-red/20 bg-red-50 rounded-ios p-3 text-[13px] leading-[18px] text-ios-red mb-3">error: {comp_type}</div>'
 
 def render_components(components):
     if not components:
@@ -527,13 +588,13 @@ def wrap_html(content, user_query=""):
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
+    {IOS_TAILWIND_CONFIG}
+    {IOS_BASE_STYLES}
 </head>
-<body class="bg-white p-3 text-sm">
+<body class="bg-ios-bg-2 p-4">
     {content}
 </body>
 </html>'''
-
-import re
 
 def simple_markdown(text):
     """将简单 markdown 转为 HTML"""
@@ -548,16 +609,16 @@ def simple_markdown(text):
         stripped = line.strip()
         if stripped.startswith('- ') or stripped.startswith('* '):
             if not in_list:
-                result.append('<ul style="margin:4px 0;padding-left:16px;">')
+                result.append('<ul style="margin:8px 0;padding-left:20px;">')
                 in_list = True
             item = stripped[2:]
-            result.append(f'<li style="margin:2px 0;color:#374151;">{item}</li>')
+            result.append(f'<li style="margin:4px 0;color:#000;font-size:17px;line-height:1.4;">{item}</li>')
         else:
             if in_list:
                 result.append('</ul>')
                 in_list = False
             if stripped:
-                result.append(f'<p style="margin:4px 0;color:#374151;line-height:1.5;">{stripped}</p>')
+                result.append(f'<p style="margin:8px 0;color:#000;font-size:17px;line-height:1.4;">{stripped}</p>')
     if in_list:
         result.append('</ul>')
     return '\n'.join(result)
@@ -567,7 +628,7 @@ def render_chat_html(user_query, agent_text="", component_html=""):
     md_html = simple_markdown(agent_text)
 
     agent_text_block = f'''
-        <div style="font-size:13px;line-height:1.6;color:#1f2937;">
+        <div style="font-size:17px;line-height:1.4;color:#000;">
             {md_html}
         </div>
     ''' if md_html else ""
@@ -579,17 +640,17 @@ def render_chat_html(user_query, agent_text="", component_html=""):
     ''' if component_html else ""
 
     return f'''
-    <div style="padding:12px 10px 20px 10px;">
+    <div style="padding:16px 12px 20px 12px;">
         <!-- 用户消息 -->
         <div style="display:flex;justify-content:flex-end;margin-bottom:16px;">
             <div style="
                 max-width:75%;
-                background:#95EC69;
-                color:#000;
-                padding:9px 12px;
-                border-radius:4px;
-                font-size:14px;
-                line-height:1.5;
+                background:#007AFF;
+                color:#fff;
+                padding:10px 16px;
+                border-radius:18px;
+                font-size:17px;
+                line-height:1.4;
                 word-break:break-word;
                 position:relative;
             ">
@@ -599,18 +660,18 @@ def render_chat_html(user_query, agent_text="", component_html=""):
                     width:0;height:0;
                     border-top:6px solid transparent;
                     border-bottom:6px solid transparent;
-                    border-left:6px solid #95EC69;
+                    border-left:6px solid #007AFF;
                 "></div>
                 {user_query}
             </div>
             <div style="
                 width:36px;height:36px;
-                background:#7BC8F7;
-                border-radius:4px;
+                background:linear-gradient(135deg,#5AC8FA,#007AFF);
+                border-radius:50%;
                 margin-left:8px;
                 flex-shrink:0;
                 display:flex;align-items:center;justify-content:center;
-                font-size:16px;color:#fff;font-weight:600;
+                font-size:14px;color:#fff;font-weight:600;
             ">Me</div>
         </div>
 
@@ -618,8 +679,8 @@ def render_chat_html(user_query, agent_text="", component_html=""):
         <div style="display:flex;align-items:flex-start;margin-bottom:16px;">
             <div style="
                 width:36px;height:36px;
-                background:linear-gradient(135deg,#667eea,#764ba2);
-                border-radius:4px;
+                background:linear-gradient(135deg,#5856D6,#AF52DE);
+                border-radius:50%;
                 margin-right:8px;
                 flex-shrink:0;
                 display:flex;align-items:center;justify-content:center;
@@ -636,8 +697,8 @@ def render_chat_html(user_query, agent_text="", component_html=""):
                 "></div>
                 <div style="
                     background:#fff;
-                    border-radius:4px;
-                    padding:10px 12px;
+                    border-radius:18px;
+                    padding:12px 16px;
                     word-break:break-word;
                 ">
                     {agent_text_block}

@@ -729,20 +729,6 @@ COMPONENT_CATALOG = {
         "props": {"text": "段落内容"},
         "example": {"type": "Paragraph", "text": "我们提供同城/跨城快递服务，预计 1-3 天送达，支持上门取件。"},
     },
-    "BulletList": {
-        "scope": "通用",
-        "category": "展示类",
-        "description": "无序列表组件，将多条信息以列表形式呈现。适合罗列要点、步骤说明、注意事项等结构化文字信息。",
-        "props": {"items": "字符串数组，每项为一条列表内容"},
-        "example": {"type": "BulletList", "items": ["免费上门取件", "支持保价服务", "可实时查看物流轨迹"]},
-    },
-    "ServiceCard": {
-        "scope": "通用",
-        "category": "展示类",
-        "description": "服务卡片组件，展示一项服务的标题、副标题和标签。适合在多个服务选项中展示单项服务概要，如快递公司、生活缴费项目等。",
-        "props": {"title": "服务名称", "subtitle": "补充说明", "tag": "右上角标签（如'推荐'）"},
-        "example": {"type": "ServiceCard", "title": "顺丰速运", "subtitle": "预计明天 18:00 前送达", "tag": "推荐"},
-    },
     "InfoTable": {
         "scope": "通用",
         "category": "展示类",
@@ -750,68 +736,12 @@ COMPONENT_CATALOG = {
         "props": {"headers": "表头数组", "rows": "行数据数组，每行为 {name, rate, feature} 对象"},
         "example": {"type": "InfoTable", "headers": ["产品", "费率", "特点"], "rows": [{"name": "余额宝", "rate": "2.1%", "feature": "随存随取"}, {"name": "定期理财", "rate": "3.5%", "feature": "封闭 30 天"}]},
     },
-    "Notice": {
-        "scope": "通用",
-        "category": "展示类",
-        "description": "提示通知组件，以彩色横幅形式展示提示信息。type 可选 info（蓝色）、warning（橙色）、success（绿色）。适合在操作前后给用户重要提醒，如风险提示、温馨提醒、成功通知等。",
-        "props": {"type": "提示类型：info / warning / success", "title": "提示标题（可选）", "content": "提示正文"},
-        "example": {"type": "Notice", "type": "warning", "title": "安全提醒", "content": "请勿向陌生人透露验证码，谨防电信诈骗。"},
-    },
-    "SectionHeader": {
-        "scope": "通用",
-        "category": "展示类",
-        "description": "分组标题组件，左侧带竖线装饰的小标题。用于将回复内容分成多个视觉区块，如「寄件信息」「费用明细」等，帮助用户快速定位。",
-        "props": {"title": "标题文字", "subtitle": "副标题（可选）"},
-        "example": {"type": "SectionHeader", "title": "费用明细", "subtitle": "以下为预估费用"},
-    },
-    "Timeline": {
-        "scope": "通用",
-        "category": "展示类",
-        "description": "时间线组件，按时间顺序展示一系列事件。适合展示物流轨迹、订单状态历史、流程记录等有时序关系的信息。每个节点有状态标记（completed/current/pending）。",
-        "props": {"steps": "事件数组，每项含 {status, time, desc}"},
-        "example": {"type": "Timeline", "steps": [{"status": "completed", "time": "04-01 10:00", "desc": "快递已揽收"}, {"status": "current", "time": "04-01 15:30", "desc": "运输中，已到达杭州中转站"}, {"status": "pending", "time": "", "desc": "派送中"}]},
-    },
-    "StepProgress": {
-        "scope": "通用",
-        "category": "展示类",
-        "description": "步骤进度组件，以线性步骤条展示流程当前进度。current 指定当前所在步骤（0 起始）。适合寄件下单、申请审批等多步骤流程的进度可视化。",
-        "props": {"steps": "步骤名称数组", "current": "当前步骤索引（0 起始）"},
-        "example": {"type": "StepProgress", "steps": ["填写信息", "确认订单", "在线支付", "等待取件"], "current": 1},
-    },
-    "AddressItem": {
-        "scope": "行业特定",
-        "category": "展示类",
-        "description": "地址展示组件，只读展示一条地址信息，含类型标签、姓名、电话和详细地址。适合在订单确认页展示已选择的寄/收件地址。",
-        "props": {"type": "地址类型标签（如'寄件'/'收件'）", "name": "姓名", "phone": "电话", "address": "详细地址"},
-        "example": {"type": "AddressItem", "type": "收件", "name": "张三", "phone": "138****1234", "address": "浙江省杭州市西湖区文三路 123 号"},
-    },
-    "PackageInfo": {
-        "scope": "行业特定",
-        "category": "展示类",
-        "description": "包裹信息组件，横向展示包裹的重量、类型和保价金额。适合在快递订单中汇总展示包裹基本属性。",
-        "props": {"weight": "重量", "type": "包裹类型", "value": "保价金额"},
-        "example": {"type": "PackageInfo", "weight": "2.5kg", "type": "物品", "value": "¥500"},
-    },
     "PriceCard": {
         "scope": "通用",
         "category": "展示类",
         "description": "价格卡片组件，带「费用明细」标题的价格分项列表，底部显示合计。适合展示订单费用构成，如运费、包装费、保价费等。",
         "props": {"items": "费用项数组 [{label, value}]", "total": "合计金额"},
         "example": {"type": "PriceCard", "items": [{"label": "基础运费", "value": "¥12"}, {"label": "包装费", "value": "¥3"}, {"label": "保价费", "value": "¥2"}], "total": "¥17"},
-    },
-    "PriceDetail": {
-        "scope": "通用",
-        "category": "展示类",
-        "description": "价格明细组件，功能与 PriceCard 相同，同样展示分项费用和合计。两者可互换使用，提供给 LLM 更灵活的命名选择。",
-        "props": {"items": "费用项数组 [{label, value}]", "total": "合计金额"},
-        "example": {"type": "PriceDetail", "items": [{"label": "话费充值", "value": "¥100"}, {"label": "优惠减免", "value": "-¥5"}], "total": "¥95"},
-    },
-    "Coupon": {
-        "scope": "通用",
-        "category": "展示类",
-        "description": "优惠券组件，以橙色醒目卡片展示优惠信息。左侧显示标题和使用条件，右侧突出优惠金额。适合在支付前推荐可用优惠券。",
-        "props": {"title": "优惠券名称", "amount": "优惠金额", "condition": "使用条件（可选）"},
-        "example": {"type": "Coupon", "title": "新人专享运费券", "amount": "¥5", "condition": "满 15 元可用"},
     },
 
     # ── 输入/选择类 ────────────────────────────────────────
@@ -828,27 +758,6 @@ COMPONENT_CATALOG = {
         "description": "联系人输入组件，包含姓名和电话两个字段。适合在寄件、预约等场景收集联系人信息。",
         "props": {"label": "标签", "name": "姓名预填值", "phone": "电话预填值"},
         "example": {"type": "ContactInput", "label": "寄件人", "name": "", "phone": ""},
-    },
-    "PackageSelector": {
-        "scope": "行业特定",
-        "category": "输入选择类",
-        "description": "包裹类型选择器，以横向标签组展示选项，选中项高亮为蓝色。适合让用户快速选择包裹类型、文件类型等固定选项。",
-        "props": {"options": "选项数组", "selected": "默认选中索引"},
-        "example": {"type": "PackageSelector", "options": ["文件", "日用品", "数码产品", "生鲜食品"], "selected": 0},
-    },
-    "WeightSelector": {
-        "scope": "行业特定",
-        "category": "输入选择类",
-        "description": "重量选择器，左侧显示标签，右侧显示当前重量值和单位。适合快递寄件中让用户确认或调整包裹重量。",
-        "props": {"label": "标签", "value": "当前值", "unit": "单位"},
-        "example": {"type": "WeightSelector", "label": "包裹重量", "value": "2.5", "unit": "kg"},
-    },
-    "TimePicker": {
-        "scope": "行业特定",
-        "category": "输入选择类",
-        "description": "时间段选择器，以纵向列表展示可选时间段，选中项蓝色高亮。适合预约取件、预约上门服务等需要用户选择时间窗口的场景。",
-        "props": {"label": "标签", "slots": "时间段数组", "selected": "默认选中索引"},
-        "example": {"type": "TimePicker", "label": "期望取件时间", "slots": ["今天 14:00-16:00", "今天 16:00-18:00", "明天 09:00-11:00", "明天 14:00-16:00"], "selected": 0},
     },
     "TagOptions": {
         "scope": "通用",
@@ -965,12 +874,4 @@ COMPONENT_CATALOG = {
         "example": {"type": "VerifyButton", "label": "实名认证", "agreement": "《隐私保护协议》", "checked": False, "idNumber": ""},
     },
 
-    # ── 特殊组件 ────────────────────────────────────────────
-    "AddressCollector": {
-        "scope": "行业特定",
-        "category": "特殊组件",
-        "description": "地址收集表单组件，包含姓名、手机号、详细地址三个输入项，顶部有类型标签。这是快递寄件场景的核心组件，用于一次性收集完整的寄/收件地址信息。",
-        "props": {"type": "地址类型（如'寄件'/'收件'）", "name": "姓名预填值", "phone": "电话预填值", "address": "地址预填值"},
-        "example": {"type": "AddressCollector", "type": "寄件", "name": "", "phone": "", "address": ""},
-    },
 }

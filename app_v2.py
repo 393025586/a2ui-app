@@ -6,8 +6,10 @@ import streamlit as st
 import streamlit.components.v1 as stc
 import json
 import re
+import importlib
 import model
 import components as comp_lib
+importlib.reload(comp_lib)
 
 st.set_page_config(page_title="A2UI Playground", layout="wide", initial_sidebar_state="collapsed")
 
